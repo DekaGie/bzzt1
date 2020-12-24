@@ -83,7 +83,7 @@ app.get('/webhook', (req, res) => {
 app.get('/hello', (req, res) => {
   console.log('HELLO:');
   console.log(req);
-  res.status(200).send("world");
+  res.status(200).send("Aplikacja Beauty ZAZERO nie przetwarza żadnych danych osobowych użytkowników.");
 });
 
 function callSendAPI(sender_psid, response) {
