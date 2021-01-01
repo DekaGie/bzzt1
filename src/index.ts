@@ -1,9 +1,12 @@
-import app from './App'
+import App from './App'
 
-app.listen(process.env.PORT, (err) => {
-  if (err) {
-    console.log(err)
-  } else {
+App.start(
+  {
+    port: parseFloat(process.env.PORT),
+    verifyToken: process.env.VERIFY_TOKEN
+  }
+).then(
+  () => {
     console.log('server is listening')
   }
-})
+)

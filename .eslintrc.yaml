@@ -10,6 +10,12 @@
     ecmaFeatures:
       modules: true
   rules:
+    no-unused-vars:
+      - error
+      - vars: all
+        args: none
+    class-methods-use-this:
+      - off
     generator-star-spacing:
       - 2
       - before: true

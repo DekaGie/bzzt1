@@ -1,22 +1,29 @@
-import * as express from 'express'
+import express, { Application } from 'express'
+import Config from './Config'
+import VerificationServlet from './VerificationServlet'
+import ExpressEndpointFactory from './http/ExpressEndpointFactory'
+import ErrorFilter from './ErrorFilter'
+import PrivacyPolicyServlet from './PrivacyPolicyServlet'
 
 class App {
-  public express
+  static start (config: Config): Promise<void> {
+    const application: Application = express()
 
-  constructor () {
-    this.express = express()
-    this.mountRoutes()
-  }
+    const endpoints: ExpressEndpointFactory = new ExpressEndpointFactory()
+      .filter(new ErrorFilter())
 
-  private mountRoutes (): void {
-    const router = express.Router()
-    router.get('/hello', (req, res) => {
-      res.json({
-        message: 'Hello World! 5'
-      })
-    })
-    this.express.use('/', router)
+    application.get(
+      '/hello',
+      endpoints.servlet(new PrivacyPolicyServlet())
+    )
+
+    application.get(
+      '/webhook',
+      endpoints.servlet(new VerificationServlet(config.verifyToken))
+    )
+
+    return new Promise((resolve) => application.listen(config.port, resolve))
   }
 }
 
-export default new App().express
+export default App
