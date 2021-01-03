@@ -1,6 +1,7 @@
 import { ParsedQs } from 'qs'
 import { Optional } from 'typescript-optional'
 import HttpError from './HttpError'
+import Predicates from '../util/Predicates'
 
 class UrlQuery {
   private readonly qs: ParsedQs
@@ -20,7 +21,7 @@ class UrlQuery {
     if (value === undefined) {
       return Optional.empty()
     }
-    if (typeof value === 'string') {
+    if (Predicates.isString(value)) {
       return Optional.of(value)
     }
     if (Array.isArray(value)) {

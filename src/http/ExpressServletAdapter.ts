@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from 'express-serve-static-core'
 import HttpServlet from './HttpServlet'
 import UrlQuery from './UrlQuery'
+import Predicates from '../util/Predicates'
+import RequestBody from './RequestBody'
 
 class ExpressServletAdapter {
   private readonly servlet: HttpServlet
@@ -10,20 +12,39 @@ class ExpressServletAdapter {
   }
 
   handle (req: Request, res: Response, next: NextFunction): void {
-    this.servlet.handle(
-      {
-        query: new UrlQuery(req.query)
+    ExpressServletAdapter.readBody(req)
+      .then(
+        (body) => this.servlet.handle(
+          {
+            query: new UrlQuery(req.query),
+            body: new RequestBody(body)
+          }
+        )
+      )
+      .then(
+        (response) => {
+          res.status(response.code)
+          const responseBody: string | object | undefined = response.body
+          if (Predicates.isObject(responseBody)) {
+            res.contentType('application/json').json(responseBody)
+          } else if (Predicates.isString(response.body)) {
+            res.contentType('text/plain').send(responseBody)
+          } else {
+            res.send()
+          }
+          next()
+        },
+        next
+      )
+  }
+
+  private static readBody (req: Request): Promise<Buffer> {
+    return new Promise<Buffer>(
+      (resolve) => {
+        const buffers: Array<Buffer> = []
+        req.on('data', (chunk) => buffers.push(chunk))
+        req.on('end', () => resolve(Buffer.concat(buffers)))
       }
-    ).then(
-      (response) => {
-        res.status(response.code)
-        if (response.body instanceof Object) {
-          res.contentType('application/json').json(response.body)
-        } else if (response.body !== undefined) {
-          res.contentType('text/plain').send(response.body)
-        }
-      },
-      next
     )
   }
 }
