@@ -45,10 +45,32 @@ class MessagingServlet implements HttpServlet {
   }
 
   private handleMessage (senderId: string, message: JsonObject): void {
-    message.optional('text').ifPresent(
+    const verifier: RegExp = new RegExp('^[0-9]{6,16}$')
+    message.optional('text').map((element) => element.asString()).ifPresent(
       (text) => {
+        let response: string
+        if (!verifier.test(text)) {
+          response = 'Dzień dobry!\nProszę, podaj mi swój numer karty Beauty ZAZERO.'
+        } else if (text === '113192399') {
+          response = 'Dziękuję!\nTwoja karta jest ważna do 17.02.2021 i obejmuje usługi:\n'
+              + ' - Stylizacja Brwi'
+        } else if (text === '113329308') {
+          response = 'Dziękuję!\nTwoja karta jest ważna do 31.12.2021 i obejmuje usługi:\n'
+              + ' - Paznokcie\n - Stylizacja Rzęs'
+        } else if (text === '114945246') {
+          response = 'Niestety, Twoja karta straciła ważność 30.11.2020.'
+        } else if (text === '114990607') {
+          response = 'Niestety, Twoja karta straciła ważność 31.08.2020.'
+        } else if (text === '138482385') {
+          response = 'Dziękuję!\nTwoja karta jest ważna do 28.06.2021 i obejmuje usługi:\n'
+              + ' - Stylizacja Brwi\n - Stylizacja Rzęs'
+        } else {
+          response = 'Niestety, to nie jest poprawny numer karty. '
+              + 'Upewnij się, że przepisałeś wszystkie cyfry znajdujące się pod kodem kreskowym.'
+        }
+
         this.fbClient.messenger(senderId)
-          .send(`you sent me "${text.asString()}"`)
+          .send(`you sent me "${response}"`)
           .catch(
             (error) => {
               console.error(`could not respond to ${senderId}`)
