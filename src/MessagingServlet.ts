@@ -70,7 +70,7 @@ class MessagingServlet implements HttpServlet {
         }
 
         this.fbClient.messenger(senderId)
-          .send(`you sent me "${response}"`)
+          .send(response)
           .catch(
             (error) => {
               console.error(`could not respond to ${senderId}`)
