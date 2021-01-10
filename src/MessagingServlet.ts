@@ -1,14 +1,27 @@
+import { Optional } from 'typescript-optional'
 import HttpServlet from './http/HttpServlet'
 import HttpResponse from './http/HttpResponse'
 import HttpRequest from './http/HttpRequest'
 import HttpError from './http/HttpError'
 import JsonObject from './json/JsonObject'
 import FbClient from './fb/FbClient'
+import CardChecker from './service/CardChecker'
+import BarcodeParser from './service/BarcodeParser'
 
 class MessagingServlet implements HttpServlet {
+  private readonly barcodeParser: BarcodeParser;
+
+  private readonly cardChecker: CardChecker;
+
   private readonly fbClient: FbClient;
 
-  constructor (fbClient: FbClient) {
+  constructor (
+    barcodeParser: BarcodeParser,
+    cardChecker: CardChecker,
+    fbClient: FbClient
+  ) {
+    this.barcodeParser = barcodeParser
+    this.cardChecker = cardChecker
     this.fbClient = fbClient
   }
 
@@ -45,44 +58,63 @@ class MessagingServlet implements HttpServlet {
   }
 
   private handleMessage (senderId: string, message: JsonObject): void {
-    const verifier: RegExp = new RegExp('^[0-9]{6,16}$')
-    message.optional('text').map((element) => element.asString()).ifPresent(
-      (text) => {
-        let response: string
-        if (!verifier.test(text)) {
-          response = 'Dzień dobry!\nProszę, podaj mi swój numer karty Beauty ZAZERO.'
-        } else if (text === '113192399') {
-          response = 'Dziękuję!\nTwoja karta jest ważna do 17.02.2021 i obejmuje usługi:\n'
-              + ' - Stylizacja Brwi'
-        } else if (text === '113329308') {
-          response = 'Dziękuję!\nTwoja karta jest ważna do 31.12.2021 i obejmuje usługi:\n'
-              + ' - Paznokcie\n - Stylizacja Rzęs'
-        } else if (text === '114945246') {
-          response = 'Niestety, Twoja karta straciła ważność 30.11.2020.'
-        } else if (text === '114990607') {
-          response = 'Niestety, Twoja karta straciła ważność 31.08.2020.'
-        } else if (text === '138482385') {
-          response = 'Dziękuję!\nTwoja karta jest ważna do 28.06.2021 i obejmuje usługi:\n'
-              + ' - Stylizacja Brwi\n - Stylizacja Rzęs'
-        } else {
-          response = 'Niestety, to nie jest poprawny numer karty. '
-              + 'Upewnij się, że przepisałeś wszystkie cyfry znajdujące się pod kodem kreskowym.'
+    message.optional('text')
+      .map((element) => element.asString())
+      .flatMap((string) => MessagingServlet.extractNumber(string))
+      .map((detected) => Promise.resolve(Optional.of(detected)))
+      .orElseGet(
+        () => message.optional('attachments')
+          .map((attachments) => attachments.asArray())
+          .flatMap(
+            (attachments) => Optional.ofNullable(
+              attachments.map((attachment) => attachment.asObject()).find(
+                (attachment) => attachment.mandatory('type').asString() === 'image'
+              )
+            )
+          )
+          .map((attachment) => attachment.mandatory('payload').asObject().mandatory('url').asString())
+          .map((imageUrl) => this.barcodeParser.parse(imageUrl))
+          .orElse(Promise.resolve(Optional.empty()))
+      )
+      .then(
+        (detected) => {
+          console.log(`handling ${detected.map((cardNumber) => cardNumber.toString()).orElse('<not found>')}`)
+          return detected.map((cardNumber) => this.cardChecker.check(cardNumber))
+            .orElse('Dzień dobry!\nZeskanuj kartę Beauty ZAZERO lub podaj jej numer.')
         }
-
-        this.fbClient.messenger(senderId)
+      )
+      .catch(
+        (error) => {
+          console.error('error while detecting card number:')
+          console.error(error)
+          return 'Przepraszam, ale coś poszło nie tak. Spróbuj ponownie później.'
+        }
+      )
+      .then(
+        (response) => this.fbClient.messenger(senderId)
           .send(response)
           .catch(
             (error) => {
-              console.error(`could not respond to ${senderId}`)
+              console.error(`error while responding to ${senderId}:`)
               console.error(error)
             }
           )
-      }
-    )
+      )
   }
 
   private handlePostback (senderId: string, postback: JsonObject): void {
 
+  }
+
+  private static extractNumber (string: string): Optional<number> {
+    return Optional.of(
+      Number.parseInt(
+        Array.from(string)
+          .filter((char) => char >= '0' && char <= '9')
+          .reduce((left, right) => left + right),
+        10
+      )
+    ).filter((value) => !Number.isNaN(value))
   }
 }
 

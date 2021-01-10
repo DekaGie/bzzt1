@@ -2,7 +2,7 @@ import App from './App'
 
 App.start(
   {
-    port: parseFloat(process.env.PORT),
+    port: Number.parseInt(process.env.PORT, 10),
     verifyToken: process.env.VERIFY_TOKEN,
     accessToken: process.env.ACCESS_TOKEN
   }

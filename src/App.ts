@@ -6,6 +6,8 @@ import ErrorFilter from './ErrorFilter'
 import PrivacyPolicyServlet from './PrivacyPolicyServlet'
 import MessagingServlet from './MessagingServlet'
 import FbClient from './fb/FbClient'
+import BarcodeParser from './service/BarcodeParser'
+import CardChecker from './service/CardChecker'
 
 class App {
   static start (config: Config): Promise<void> {
@@ -26,7 +28,13 @@ class App {
 
     application.post(
       '/webhook',
-      endpoints.servlet(new MessagingServlet(new FbClient(config.accessToken)))
+      endpoints.servlet(
+        new MessagingServlet(
+          new BarcodeParser(),
+          new CardChecker(),
+          new FbClient(config.accessToken)
+        )
+      )
     )
 
     return new Promise((resolve) => application.listen(config.port, resolve))

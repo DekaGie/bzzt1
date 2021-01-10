@@ -2,8 +2,10 @@
   extends: airbnb-base
   env:
     node: true
-    mocha: true
     es6: true
+    jest: true
+  plugins:
+    - jest
   parser: '@typescript-eslint/parser'
   parserOptions:
     sourceType: module
