@@ -111,7 +111,7 @@ class MessagingServlet implements HttpServlet {
       Number.parseInt(
         Array.from(string)
           .filter((char) => char >= '0' && char <= '9')
-          .reduce((left, right) => left + right),
+          .reduce((left, right) => left + right, ''),
         10
       )
     ).filter((value) => !Number.isNaN(value))
