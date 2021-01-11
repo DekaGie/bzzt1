@@ -58,52 +58,71 @@ class MessagingServlet implements HttpServlet {
   }
 
   private handleMessage (senderId: string, message: JsonObject): void {
-    message.optional('text')
+    const fromText: Optional<number> = message.optional('text')
       .map((element) => element.asString())
       .flatMap((string) => MessagingServlet.extractNumber(string))
-      .map((detected) => Promise.resolve(Optional.of(detected)))
-      .orElseGet(
-        () => message.optional('attachments')
-          .map((attachments) => attachments.asArray())
-          .flatMap(
-            (attachments) => Optional.ofNullable(
-              attachments.map((attachment) => attachment.asObject()).find(
-                (attachment) => attachment.mandatory('type').asString() === 'image'
-              )
-            )
+    if (fromText.isPresent()) {
+      const cardNumber: number = fromText.get()
+      console.log(`handling from text: ${cardNumber}`)
+      this.handleNumber(senderId, cardNumber)
+      return
+    }
+
+    const fromAttachment: Optional<string> = message.optional('attachments')
+      .map((attachments) => attachments.asArray())
+      .flatMap(
+        (attachments) => Optional.ofNullable(
+          attachments.map((attachment) => attachment.asObject()).find(
+            (attachment) => attachment.mandatory('type').asString() === 'image'
           )
-          .map((attachment) => attachment.mandatory('payload').asObject().mandatory('url').asString())
-          .map((imageUrl) => this.barcodeParser.parse(imageUrl))
-          .orElse(Promise.resolve(Optional.empty()))
+        )
       )
-      .then(
-        (detected) => {
-          console.log(`handling ${detected.map((cardNumber) => cardNumber.toString()).orElse('<not found>')}`)
-          return detected.map((cardNumber) => this.cardChecker.check(cardNumber))
-            .orElse('Dzień dobry!\nZeskanuj kartę Beauty ZAZERO lub podaj jej numer.')
-        }
-      )
-      .catch(
-        (error) => {
-          console.error('error while detecting card number:')
-          console.error(error)
-          return 'Przepraszam, ale coś poszło nie tak. Spróbuj ponownie później.'
-        }
-      )
-      .then(
-        (response) => this.fbClient.messenger(senderId)
-          .send(response)
-          .catch(
-            (error) => {
-              console.error(`error while responding to ${senderId}:`)
-              console.error(error)
+      .map((attachment) => attachment.mandatory('payload').asObject().mandatory('url').asString())
+    if (fromAttachment.isPresent()) {
+      const cardUrl: string = fromAttachment.get()
+      console.log(`found attachment: ${cardUrl}`)
+      this.barcodeParser.parse(cardUrl)
+        .then(
+          (fromImage) => {
+            if (fromImage.isPresent()) {
+              const cardNumber: number = fromImage.get()
+              console.log(`handling from image: ${cardNumber}`)
+              this.handleNumber(senderId, cardNumber)
+            } else {
+              this.respond(senderId, 'Postaraj się, by na zdjęciu widoczny był jedynie kompletny kod kreskowy karty.')
             }
-          )
-      )
+          }
+        )
+        .catch(
+          (error) => {
+            console.error('error while detecting card number:')
+            console.error(error)
+            this.respond(senderId, 'Przepraszam, ale coś poszło nie tak. Spróbuj ponownie później.')
+          }
+        )
+      return
+    }
+
+    this.respond(senderId, 'Dzień dobry!\nZeskanuj kartę Beauty ZAZERO lub podaj jej numer.')
   }
 
   private handlePostback (senderId: string, postback: JsonObject): void {
 
+  }
+
+  private handleNumber (senderId: string, cardNumber: number): void {
+    this.respond(senderId, this.cardChecker.check(cardNumber))
+  }
+
+  private respond (senderId: string, message: string): void {
+    this.fbClient.messenger(senderId)
+      .send(message)
+      .catch(
+        (error) => {
+          console.error(`error while responding to ${senderId}:`)
+          console.error(error)
+        }
+      )
   }
 
   private static extractNumber (string: string): Optional<number> {
