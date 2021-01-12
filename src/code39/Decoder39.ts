@@ -7,18 +7,18 @@ import LineExtractors from './LineExtractors'
 import LineExtractor from './LineExtractor'
 
 class Decoder39 {
-  private static MAX_JITTER: number = 0.8
+  private static readonly MAX_JITTER: number = 0.8
 
-  private static MIN_DISCRIMINATION: number = 1.5;
+  private static readonly MIN_DISCRIMINATION: number = 1.5;
 
-  private static MAX_DISCRIMINATION: number = 3.5;
+  private static readonly MAX_DISCRIMINATION: number = 3.5;
 
-  private static BIT_LUMI_THRESHOLDS: Array<number> = [60, 120, 30, 180, 90]
+  private static readonly BIT_LUMI_THRESHOLDS: Array<number> = [60, 120, 30, 180, 90]
 
-  private static SAMPLED_LINE_RATIOS: Array<number> =
+  private static readonly SAMPLED_LINE_RATIOS: Array<number> =
       [0.5, 0.4, 0.6, 0.3, 0.7, 0.45, 0.55, 0.35, 0.65, 0.2, 0.8, 0.1, 0.9]
 
-  private static LINE_EXTRACTORS: Array<LineExtractor> = [
+  private static readonly LINE_EXTRACTORS: Array<LineExtractor> = [
     LineExtractors.HORIZONTAL,
     LineExtractors.VERTICAL,
     LineExtractors.backward(LineExtractors.HORIZONTAL),
