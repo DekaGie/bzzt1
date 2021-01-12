@@ -1,9 +1,11 @@
 interface Config {
   port: number
 
-  verifyToken: string;
+  verifyToken: string
 
-  accessToken: string;
+  accessToken: string
+
+  ocrSpaceApiKey: string
 }
 
 export default Config

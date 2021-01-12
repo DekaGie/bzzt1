@@ -89,7 +89,7 @@ class MessagingServlet implements HttpServlet {
               console.log(`handling from image: ${cardNumber}`)
               this.handleNumber(senderId, cardNumber)
             } else {
-              this.respond(senderId, 'Postaraj się, by na zdjęciu widoczny był jedynie kompletny kod kreskowy karty.')
+              this.respond(senderId, 'Postaraj się wykonać z bliska zdjęcie kompletnego kodu kreskowego karty.')
             }
           }
         )
