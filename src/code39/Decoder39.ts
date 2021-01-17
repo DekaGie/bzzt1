@@ -1,204 +1,130 @@
 import { Optional } from 'typescript-optional'
 import Image from '../img/Image'
-import Code39Symbol from './Code39Symbol'
-import Code39Symbols from './Code39Symbols'
-import BitStream from './BitStream'
 import LineExtractors from './LineExtractors'
 import LineExtractor from './LineExtractor'
+import LineEnhancer from './LineEnhancer'
+import LineThresholder from './LineThresholder'
+import LineParser from './LineParser'
+import Combinator from './Combinator'
+import Weighted from './Weighted'
+import LineEnhancers from './LineEnhancers'
+
+interface Settings {
+
+  extractor: LineExtractor
+
+  ratio: number
+
+  enhancer: LineEnhancer
+
+  thresholder: LineThresholder
+}
 
 class Decoder39 {
-  private static readonly MAX_JITTER: number = 0.8
+  private static readonly MIN_DIMENSION: number = 200
 
-  private static readonly MIN_DISCRIMINATION: number = 1.5;
+  private static readonly MIN_LINE_LENGTH: number = 1600;
 
-  private static readonly MAX_DISCRIMINATION: number = 3.5;
+  private static readonly MIN_CUMULATIVE_DIFF: number = 9 * 2 * 9 * 50
 
-  private static readonly BIT_LUMI_THRESHOLDS: Array<number> = [60, 120, 30, 180, 90]
-
-  private static readonly SAMPLED_LINE_RATIOS: Array<number> =
-      [0.5, 0.4, 0.6, 0.3, 0.7, 0.45, 0.55, 0.35, 0.65, 0.2, 0.8, 0.1, 0.9]
-
-  private static readonly LINE_EXTRACTORS: Array<LineExtractor> = [
-    LineExtractors.HORIZONTAL,
-    LineExtractors.VERTICAL,
-    LineExtractors.backward(LineExtractors.HORIZONTAL),
-    LineExtractors.backward(LineExtractors.VERTICAL),
-    LineExtractors.SLASH,
-    LineExtractors.backward(LineExtractors.SLASH),
-    LineExtractors.BACKSLASH,
-    LineExtractors.backward(LineExtractors.BACKSLASH)
+  private static readonly LINE_EXTRACTORS: Array<Weighted<LineExtractor>> = [
+    Combinator.weight(LineExtractors.HORIZONTAL, 100),
+    Combinator.weight(LineExtractors.VERTICAL, 90),
+    Combinator.weight(LineExtractors.SLASH, 1),
+    Combinator.weight(LineExtractors.BACKSLASH, 1),
   ]
 
+  private static readonly LINE_RATIOS: Array<Weighted<number>> =
+      Combinator.linearWeights(Decoder39.sample(0.2, 0.05, 0.8))
+
+  private static readonly LINE_ENHANCERS: Array<Weighted<LineEnhancer>> = [
+    Combinator.weight(LineEnhancers.equalParting(LineEnhancers.SPLINE, 250), 10),
+    Combinator.weight(LineEnhancers.SPLINE, 1)
+  ]
+
+  private static readonly LINE_THRESHOLDERS: Array<Weighted<LineThresholder>> =
+      Combinator.exponentialWeights(
+        Decoder39.sample(0.4, 0.05, 0.6)
+          .map((threshold) => new LineThresholder(threshold))
+      )
+
+  private static readonly SETTINGS: Array<Weighted<Settings>> = Combinator.combine4(
+    Decoder39.LINE_EXTRACTORS,
+    Decoder39.LINE_RATIOS,
+    Decoder39.LINE_ENHANCERS,
+    Decoder39.LINE_THRESHOLDERS
+  ).map(
+    (weightedArray) => Combinator.weight(
+      {
+        extractor: weightedArray.element[0],
+        ratio: weightedArray.element[1],
+        enhancer: weightedArray.element[2],
+        thresholder: weightedArray.element[3]
+      },
+      weightedArray.weight
+    )
+  )
+
+  private static readonly LINE_PARSER: LineParser = new LineParser()
+
   decode (image: Image): Optional<number> {
-    if (image.width() === 0 || image.height() === 0) {
-      throw new Error('invalid image dimensions')
+    if (image.width() < Decoder39.MIN_DIMENSION || image.height() < Decoder39.MIN_DIMENSION) {
+      console.warn(`rejecting too small image: ${image.width()} x ${image.height()}`)
+      return Optional.empty()
     }
-    for (let li: number = 0; li < Decoder39.LINE_EXTRACTORS.length; li += 1) {
-      const lineExtractor: LineExtractor = Decoder39.LINE_EXTRACTORS[li]
-      for (let ri: number = 0; ri < Decoder39.SAMPLED_LINE_RATIOS.length; ri += 1) {
-        const ratio: number = Decoder39.SAMPLED_LINE_RATIOS[ri]
-        const lineLumis: Uint8Array = lineExtractor.extract(image, ratio)
-        const detected: Optional<number> = this.scanLumis(lineLumis)
+
+    const started: number = new Date().getTime()
+    let cumulative: number = 0
+    for (let si: number = 0; si < Decoder39.SETTINGS.length; si += 1) {
+      const weightedSettings: Weighted<Settings> = Decoder39.SETTINGS[si]
+      const settings: Settings = weightedSettings.element
+      const probability: number = weightedSettings.weight
+      const rawLine: Uint8Array = settings.extractor.extract(image, settings.ratio)
+      if (Decoder39.canContain(rawLine)) {
+        const enhancedLine: Array<number> = settings.enhancer.enhance(rawLine, Decoder39.MIN_LINE_LENGTH)
+        const thresholdedLine: Array<boolean> = settings.thresholder.toBits(enhancedLine)
+        const detected: Optional<number> = Decoder39.LINE_PARSER.parse(thresholdedLine)
         if (detected.isPresent()) {
+          console.log(
+            `found ${detected.get()} in ${new Date().getTime() - started} ms, `
+              + `by ${JSON.stringify(settings, (key, value) => (key === '' ? value : value.toString()))} `
+              + `having probability ${probability}, after unrealized ${cumulative} `
+              + `(${si} / ${Decoder39.SETTINGS.length})`
+          )
           return detected
         }
       }
+      cumulative += probability
     }
+    console.warn(`not found after ${new Date().getTime() - started} ms`)
     return Optional.empty()
   }
 
-  private scanLumis (lumis: Uint8Array): Optional<number> {
-    const bits: Array<boolean> = new Array<boolean>(lumis.length)
-    for (let bi: number = 0; bi < Decoder39.BIT_LUMI_THRESHOLDS.length; bi += 1) {
-      const bitLumiThreshold = Decoder39.BIT_LUMI_THRESHOLDS[bi]
-      for (let i: number = 0; i < lumis.length; i += 1) {
-        bits[i] = lumis[i] < bitLumiThreshold
-      }
-      const detected: Optional<number> = this.scanBitsUntilNumber(new BitStream(bits))
-      if (detected.isPresent()) {
-        return detected
-      }
-    }
-    return Optional.empty()
-  }
-
-  private scanBitsUntilNumber (bits: BitStream): Optional<number> {
-    let useBits: BitStream = bits
+  private static sample (min: number, step: number, max: number): Array<number> {
+    const samples: Array<number> = []
+    let i: number = 0
+    const mean: number = (min + max) / 2
+    samples.push(mean)
     while (true) {
-      if (!this.scanBitsUntilDelimiter(useBits)) {
-        return Optional.empty()
-      }
-      const fallback: BitStream = bits.split()
-      let result: number = -1
-      while (true) {
-        const maybeSymbol: Optional<Code39Symbol> = this.scanBitsForSymbol(useBits)
-        if (!maybeSymbol.isPresent()) {
-          return Optional.empty()
-        }
-        const symbol: Code39Symbol = maybeSymbol.get()
-        if (Code39Symbol.HASHABLE.equals(symbol, Code39Symbols.DELIMITER)) {
-          if (result === -1) {
-            useBits = fallback
-          } else {
-            return Optional.of(result)
-          }
-        } else {
-          const digit: number | undefined = Code39Symbols.DIGITS.get(symbol)
-          if (digit === undefined) {
-            useBits = fallback
-          }
-          result = result === -1 ? digit : (result * 10 + digit)
-        }
-      }
-    }
-  }
-
-  private scanBitsForSymbol (bits: BitStream): Optional<Code39Symbol> {
-    return this.scanBitsForIsWide(bits, Code39Symbol.STRIPE_COUNT)
-      .flatMap(Code39Symbol.potential)
-  }
-
-  private scanBitsForIsWide (bits: BitStream, count: number): Optional<Array<boolean>> {
-    while (true) {
-      const bit: boolean | undefined = bits.next()
-      if (bit === undefined) {
-        return Optional.empty()
-      }
-      if (bit === true) {
+      i += 1
+      const deviation: number = i * step
+      if (mean + deviation > max) {
         break
       }
+      samples.push(mean - deviation, mean + deviation)
     }
-    const runs: Array<number> = []
-    let run: number = 1
-    let previousBit: boolean = true
-    while (true) {
-      const bit: boolean | undefined = bits.next()
-      if (bit === undefined) {
-        if (runs.length === count) {
-          return this.detectIsWide(runs)
-        }
-        return Optional.empty()
-      }
-      if (bit === previousBit) {
-        run += 1
-      } else {
-        runs.push(run)
-        if (bit === false && runs.length === count) {
-          return this.detectIsWide(runs)
-        }
-        run = 1
-        previousBit = bit
-      }
-    }
+    return samples
   }
 
-  private detectIsWide (runs: Array<number>): Optional<Array<boolean>> {
-    const sortedRuns: Array<number> = runs.slice().sort((left, right) => left - right)
-    const narrowCount: number = Decoder39.findMaxDerivativeIndex(sortedRuns)
-    if (narrowCount === 0 || narrowCount === runs.length) {
-      return Optional.empty()
+  private static canContain (rawLine: Uint8Array): boolean {
+    let cumulativeDiff: number = 0
+    let previous: number = rawLine[0]
+    for (let i: number = 1; i < rawLine.length; i += 1) {
+      const current: number = rawLine[i]
+      cumulativeDiff += Math.abs(current - previous)
+      previous = current
     }
-    const narrows: Array<number> = sortedRuns.slice(0, narrowCount)
-    const narrowSpan: number = narrows[narrows.length - 1] - narrows[0]
-    const meanNarrow: number = narrows.reduce((left, right) => left + right) / narrows.length
-    if (narrowSpan / meanNarrow > Decoder39.MAX_JITTER) {
-      return Optional.empty()
-    }
-    const wides: Array<number> = sortedRuns.slice(narrowCount, sortedRuns.length)
-    const wideSpan: number = wides[wides.length - 1] - wides[0]
-    const meanWide: number = wides.reduce((left, right) => left + right) / wides.length
-    if (wideSpan / meanWide > Decoder39.MAX_JITTER) {
-      return Optional.empty()
-    }
-    if (!Decoder39.within(meanWide / meanNarrow, Decoder39.MIN_DISCRIMINATION, Decoder39.MAX_DISCRIMINATION)) {
-      return Optional.empty()
-    }
-    return Optional.of(runs.map((run) => run >= wides[0]))
-  }
-
-  private scanBitsUntilDelimiter (bits: BitStream): boolean {
-    const runs: Array<number> = new Array<number>(Code39Symbol.STRIPE_COUNT)
-    runs.fill(1)
-    let previousBit: boolean = false
-    while (true) {
-      const bit: boolean | undefined = bits.next()
-      if (bit === undefined) {
-        return false
-      }
-      if (bit === previousBit) {
-        runs[Code39Symbol.STRIPE_COUNT - 1] += 1
-      } else {
-        if (bit === false) {
-          const isDelimiter: boolean = this.detectIsWide(runs)
-            .flatMap(Code39Symbol.potential)
-            .filter((symbol) => Code39Symbol.HASHABLE.equals(symbol, Code39Symbols.DELIMITER))
-            .isPresent()
-          if (isDelimiter) {
-            return true
-          }
-        }
-        runs.shift()
-        runs.push(1)
-        previousBit = bit
-      }
-    }
-  }
-
-  private static within (subject: number, reference: number, tolerance: number): boolean {
-    return subject - tolerance <= reference && subject + tolerance >= reference
-  }
-
-  private static findMaxDerivativeIndex (values: Array<number>): number {
-    let maxDerivative: number = -1
-    let index: number = -1
-    for (let i: number = 1; i < values.length; i += 1) {
-      const derivative = values[i] - values[i - 1]
-      if (derivative > maxDerivative) {
-        maxDerivative = derivative
-        index = i
-      }
-    }
-    return index
+    return cumulativeDiff >= Decoder39.MIN_CUMULATIVE_DIFF
   }
 }
 

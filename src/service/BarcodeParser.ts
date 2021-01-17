@@ -1,6 +1,8 @@
 import { Optional } from 'typescript-optional'
 import { HashMap, JMap } from 'typescriptcollectionsframework'
 import OcrSpace from '../ocr/OcrSpace'
+import ImageDownloader from '../img/ImageDownloader'
+import Decoder39 from '../code39/Decoder39'
 
 class BarcodeParser {
   private static readonly DIGIT_FIXES: JMap<string, number> = (() => {
@@ -30,20 +32,33 @@ class BarcodeParser {
 
   private readonly digitCount: number;
 
-  constructor (ocrSpace: OcrSpace, digitCount: number = 9) {
+  private readonly decoder: Decoder39;
+
+  constructor (decoder: Decoder39, ocrSpace: OcrSpace, digitCount: number = 9) {
+    this.decoder = decoder
     this.ocrSpace = ocrSpace
     this.digitCount = digitCount
   }
 
   parse (imageUrl: string): Promise<Optional<number>> {
-    return this.ocrSpace.recognize(imageUrl).then(
-      (texts) => this.findNumber(texts),
-      (err) => {
-        console.log(`when parsing barcode on ${imageUrl}:`)
-        console.log(err)
-        return Optional.empty()
-      }
-    )
+    return new ImageDownloader().download(imageUrl)
+      .then(
+        (image) => {
+          const decoded: Optional<number> = this.decoder.decode(image)
+          if (decoded.isPresent()) {
+            return decoded
+          }
+          return this.ocrSpace.recognize(imageUrl)
+            .then((texts) => this.findNumber(texts))
+        }
+      )
+      .catch(
+        (err) => {
+          console.error(`when parsing barcode on ${imageUrl}:`)
+          console.error(err)
+          return Optional.empty()
+        }
+      )
   }
 
   private findNumber (texts: Array<string>): Optional<number> {

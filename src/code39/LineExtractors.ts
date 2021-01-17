@@ -1,11 +1,11 @@
+// eslint-disable-next-line max-classes-per-file
 import LineExtractor from './LineExtractor'
 import Image from '../img/Image'
 import TransposedImage from '../img/TransposedImage'
 import HorizontalFlipImage from '../img/HorizontalFlipImage'
 
 class LineExtractors {
-  static HORIZONTAL: LineExtractor = {
-
+  static HORIZONTAL: LineExtractor = new class implements LineExtractor {
     extract (image: Image, ratio: number): Uint8Array {
       const y: number = Math.floor(image.height() * ratio)
       const w: number = image.width()
@@ -15,17 +15,23 @@ class LineExtractors {
       }
       return lumis
     }
-  }
 
-  static VERTICAL: LineExtractor = {
+    toString (): string {
+      return 'horizontal'
+    }
+  }()
 
+  static VERTICAL: LineExtractor = new class implements LineExtractor {
     extract (image: Image, ratio: number): Uint8Array {
       return LineExtractors.HORIZONTAL.extract(new TransposedImage(image), ratio)
     }
-  }
 
-  static SLASH: LineExtractor = {
+    toString (): string {
+      return 'vertical'
+    }
+  }()
 
+  static SLASH: LineExtractor = new class implements LineExtractor {
     extract (image: Image, ratio: number): Uint8Array {
       const w: number = image.width()
       const h: number = image.height()
@@ -44,23 +50,21 @@ class LineExtractors {
       }
       return at === lumis.length ? lumis : lumis.slice(0, at)
     }
-  }
 
-  static BACKSLASH: LineExtractor = {
+    toString (): string {
+      return 'slash'
+    }
+  }()
 
+  static BACKSLASH: LineExtractor = new class implements LineExtractor {
     extract (image: Image, ratio: number): Uint8Array {
       return LineExtractors.SLASH.extract(new HorizontalFlipImage(image), ratio)
     }
-  }
 
-  static backward (underlying: LineExtractor) {
-    return {
-
-      extract (image: Image, ratio: number): Uint8Array {
-        return underlying.extract(image, ratio).reverse()
-      }
+    toString (): string {
+      return 'backslash'
     }
-  }
+  }()
 }
 
 export default LineExtractors

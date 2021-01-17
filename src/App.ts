@@ -9,6 +9,7 @@ import FbClient from './fb/FbClient'
 import BarcodeParser from './service/BarcodeParser'
 import CardChecker from './service/CardChecker'
 import OcrSpace from './ocr/OcrSpace'
+import Decoder39 from './code39/Decoder39'
 
 class App {
   static start (config: Config): Promise<void> {
@@ -31,13 +32,12 @@ class App {
       '/webhook',
       endpoints.servlet(
         new MessagingServlet(
-          new BarcodeParser(new OcrSpace(config.ocrSpaceApiKey)),
+          new BarcodeParser(new Decoder39(), new OcrSpace(config.ocrSpaceApiKey)),
           new CardChecker(),
           new FbClient(config.accessToken)
         )
       )
     )
-
     return new Promise((resolve) => application.listen(config.port, resolve))
   }
 }
