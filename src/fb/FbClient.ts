@@ -7,8 +7,8 @@ class FbClient {
     this.accessToken = accessToken
   }
 
-  messenger (userId: string): FbMessenger {
-    return new FbMessenger(this.accessToken, userId)
+  messenger (psid: string): FbMessenger {
+    return new FbMessenger(this.accessToken, psid)
   }
 }
 

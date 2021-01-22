@@ -3,11 +3,11 @@ import axios from 'axios'
 class FbMessenger {
   private readonly accessToken: string;
 
-  private readonly userId: string;
+  private readonly psid: string;
 
-  constructor (accessToken: string, userId: string) {
+  constructor (accessToken: string, psid: string) {
     this.accessToken = accessToken
-    this.userId = userId
+    this.psid = psid
   }
 
   send (message: string): Promise<void> {
@@ -15,7 +15,7 @@ class FbMessenger {
       'https://graph.facebook.com/v9.0/me/messages',
       {
         recipient: {
-          id: this.userId
+          id: this.psid
         },
         message: {
           text: message
@@ -30,8 +30,7 @@ class FbMessenger {
       (response) => {
         if (response.status !== 200) {
           throw new Error(
-            `could not send ${this.userId} "${message}";
-              received HTTP ${response.status}: ${response.data}`
+            `could not send ${this.psid} "${message}"; received HTTP ${response.status}: ${response.data}`
           )
         }
       }

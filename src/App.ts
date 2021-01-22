@@ -10,6 +10,7 @@ import BarcodeParser from './service/BarcodeParser'
 import CardChecker from './service/CardChecker'
 import OcrSpace from './ocr/OcrSpace'
 import Decoder39 from './code39/Decoder39'
+import ChatBot from './service/ChatBot'
 
 class App {
   static start (config: Config): Promise<void> {
@@ -32,9 +33,9 @@ class App {
       '/webhook',
       endpoints.servlet(
         new MessagingServlet(
-          new BarcodeParser(new Decoder39(), new OcrSpace(config.ocrSpaceApiKey)),
-          new CardChecker(),
-          new FbClient(config.accessToken)
+          // new BarcodeParser(new Decoder39(), new OcrSpace(config.ocrSpaceApiKey)),
+          // new CardChecker(),
+          new ChatBot(new FbClient(config.accessToken))
         )
       )
     )

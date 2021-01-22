@@ -43,6 +43,10 @@ class JsonElement {
       )
     }
   }
+
+  toString (): string {
+    return JSON.stringify(this.underlying)
+  }
 }
 
 export default JsonElement

@@ -22,6 +22,10 @@ class JsonObject {
     return Optional.ofNullable(this.underlying[name])
       .map((value) => new JsonElement(`${this.path}.${name}`, value))
   }
+
+  toString (): string {
+    return JSON.stringify(this.underlying)
+  }
 }
 
 export default JsonObject
