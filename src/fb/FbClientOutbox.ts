@@ -24,11 +24,12 @@ class FbClientOutbox implements FbMessengerOutbox {
         attachment: {
           type: 'template',
           payload: {
-            template_type: 'media',
+            template_type: 'generic',
+            image_aspect_ratio: 'square',
             elements: [
               {
-                media_type: 'image',
-                url
+                title: 'Tak się wysyła image...',
+                image_url: url
               }
             ]
           }
