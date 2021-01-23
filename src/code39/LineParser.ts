@@ -32,6 +32,7 @@ class LineParser {
         if (Code39Symbol.HASHABLE.equals(symbol, Code39Symbols.DELIMITER)) {
           if (result === -1) {
             useBits = fallback
+            break
           } else {
             return Optional.of(result)
           }
@@ -39,6 +40,7 @@ class LineParser {
           const digit: number | undefined = Code39Symbols.DIGITS.get(symbol)
           if (digit === undefined) {
             useBits = fallback
+            break
           }
           result = result === -1 ? digit : (result * 10 + digit)
         }

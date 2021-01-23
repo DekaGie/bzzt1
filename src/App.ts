@@ -5,12 +5,9 @@ import ExpressEndpointFactory from './http/ExpressEndpointFactory'
 import ErrorFilter from './ErrorFilter'
 import PrivacyPolicyServlet from './PrivacyPolicyServlet'
 import MessagingServlet from './MessagingServlet'
+import FbMessengerPlatform from './fb/FbMessengerPlatform'
 import FbClient from './fb/FbClient'
-import BarcodeParser from './service/BarcodeParser'
-import CardChecker from './service/CardChecker'
-import OcrSpace from './ocr/OcrSpace'
-import Decoder39 from './code39/Decoder39'
-import ChatBot from './service/ChatBot'
+import BzzBot from './service/BzzBot'
 
 class App {
   static start (config: Config): Promise<void> {
@@ -35,7 +32,7 @@ class App {
         new MessagingServlet(
           // new BarcodeParser(new Decoder39(), new OcrSpace(config.ocrSpaceApiKey)),
           // new CardChecker(),
-          new ChatBot(new FbClient(config.accessToken))
+          new FbMessengerPlatform(new FbClient(config.accessToken), new BzzBot())
         )
       )
     )
