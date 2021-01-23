@@ -28,7 +28,7 @@ class FbClientOutbox implements FbMessengerOutbox {
             elements: [
               {
                 media_type: 'image',
-                url: 'url'
+                url
               }
             ]
           }
