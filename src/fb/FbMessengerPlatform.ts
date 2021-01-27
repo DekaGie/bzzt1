@@ -3,9 +3,9 @@ import JsonElement from '../json/JsonElement'
 import JsonObject from '../json/JsonObject'
 import HttpError from '../http/HttpError'
 import FbMessengerBot from './FbMessengerBot'
-import FbClient from './FbClient'
-import FbClientOutbox from './FbClientOutbox'
 import FbMessengerOutbox from './FbMessengerOutbox'
+import FbClient from './impl/FbClient'
+import FbClientOutbox from './impl/FbClientOutbox'
 
 class FbMessengerPlatform {
   private readonly outbox: FbMessengerOutbox;

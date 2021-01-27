@@ -23,50 +23,6 @@ class MessagingServlet implements HttpServlet {
       }
     )
   }
-  // .flatMap((string) => MessagingServlet.extractNumber(string))
-  // const cardNumber: number = fromText.get()
-  // console.log(`handling from text: ${cardNumber}`)
-  // this.handleNumber(psid, cardNumber)
-  // return
-
-  // const cardUrl: string = imageUrl.get()
-  // console.log(`found attachment: ${cardUrl}`)
-  // this.barcodeParser.parse(cardUrl)
-  //   .then(
-  //     (fromImage) => {
-  //       if (fromImage.isPresent()) {
-  //         const cardNumber: number = fromImage.get()
-  //         console.log(`handling from image: ${cardNumber}`)
-  //         this.handleNumber(psid, cardNumber)
-  //       } else {
-  //         this.respond(psid, 'Postaraj się wykonać z bliska zdjęcie kompletnego kodu kreskowego karty.')
-  //       }
-  //     }
-  //   )
-  //   .catch(
-  //     (error) => {
-  //       console.error('error while detecting card number:')
-  //       console.error(error)
-  //       this.respond(psid, 'Przepraszam, ale coś poszło nie tak. Spróbuj ponownie później.')
-  //     }
-  //   )
-
-  // this.respond(psid, 'Dzień dobry!\nZeskanuj kartę Beauty ZAZERO lub podaj jej numer.')
-
-  // private handleNumber (senderId: string, cardNumber: number): void {
-  //   this.respond(senderId, this.cardChecker.check(cardNumber))
-  // }
-
-  // private static extractNumber (string: string): Optional<number> {
-  //   return Optional.of(
-  //     Number.parseInt(
-  //       Array.from(string)
-  //         .filter((char) => char >= '0' && char <= '9')
-  //         .reduce((left, right) => left + right, ''),
-  //       10
-  //     )
-  //   ).filter((value) => !Number.isNaN(value))
-  // }
 }
 
 export default MessagingServlet

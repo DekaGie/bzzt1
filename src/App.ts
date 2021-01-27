@@ -6,8 +6,12 @@ import ErrorFilter from './ErrorFilter'
 import PrivacyPolicyServlet from './PrivacyPolicyServlet'
 import MessagingServlet from './MessagingServlet'
 import FbMessengerPlatform from './fb/FbMessengerPlatform'
-import FbClient from './fb/FbClient'
-import BzzBot from './service/BzzBot'
+import FbClient from './fb/impl/FbClient'
+import BzzBot from './BzzBot'
+import OcrSpace from './ocr/OcrSpace'
+import Decoder39 from './code39/Decoder39'
+import BarcodeParser from './service/BarcodeParser'
+import BzzCustomerCare from './service/BzzCustomerCare'
 
 class App {
   static start (config: Config): Promise<void> {
@@ -30,12 +34,18 @@ class App {
       '/webhook',
       endpoints.servlet(
         new MessagingServlet(
-          // new BarcodeParser(new Decoder39(), new OcrSpace(config.ocrSpaceApiKey)),
-          // new CardChecker(),
-          new FbMessengerPlatform(new FbClient(config.accessToken), new BzzBot())
+          new FbMessengerPlatform(
+            new FbClient(config.accessToken),
+            new BzzBot(
+              new BzzCustomerCare(
+                new BarcodeParser(new Decoder39(), new OcrSpace(config.ocrSpaceApiKey))
+              )
+            )
+          )
         )
       )
     )
+
     return new Promise((resolve) => application.listen(config.port, resolve))
   }
 }

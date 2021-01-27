@@ -4,6 +4,10 @@ class ImageUrl {
   constructor (url: string) {
     this.url = url
   }
+
+  asString () {
+    return this.url
+  }
 }
 
 export default ImageUrl

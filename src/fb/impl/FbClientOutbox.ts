@@ -1,5 +1,5 @@
 import FbClient from './FbClient'
-import FbMessengerOutbox from './FbMessengerOutbox'
+import FbMessengerOutbox from '../FbMessengerOutbox'
 
 class FbClientOutbox implements FbMessengerOutbox {
   private readonly fbClient: FbClient;
@@ -17,7 +17,7 @@ class FbClientOutbox implements FbMessengerOutbox {
     )
   }
 
-  sendImage (psid: string, url: string): void {
+  sendImage (psid: string, url: string, caption: string): void {
     this.send(
       psid,
       {
@@ -28,7 +28,7 @@ class FbClientOutbox implements FbMessengerOutbox {
             image_aspect_ratio: 'square',
             elements: [
               {
-                title: 'Tak się wysyła image...',
+                title: caption,
                 image_url: url
               }
             ]

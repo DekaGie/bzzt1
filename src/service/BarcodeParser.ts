@@ -3,6 +3,7 @@ import { HashMap, JMap } from 'typescriptcollectionsframework'
 import OcrSpace from '../ocr/OcrSpace'
 import ImageDownloader from '../img/ImageDownloader'
 import Decoder39 from '../code39/Decoder39'
+import ImageUrl from './domain/ImageUrl'
 
 class BarcodeParser {
   private static readonly DIGIT_FIXES: JMap<string, number> = (() => {
@@ -40,7 +41,8 @@ class BarcodeParser {
     this.digitCount = digitCount
   }
 
-  parse (imageUrl: string): Promise<Optional<number>> {
+  parse (url: ImageUrl): Promise<Optional<number>> {
+    const imageUrl: string = url.asString()
     return new ImageDownloader().download(imageUrl)
       .then(
         (image) => {
