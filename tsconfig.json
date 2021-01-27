@@ -4,7 +4,9 @@
     "module": "commonjs",
     "esModuleInterop": true,
     "outDir": "dist",
-    "sourceMap": true
+    "sourceMap": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
   },
   "files": [
     "./node_modules/@types/node/index.d.ts"

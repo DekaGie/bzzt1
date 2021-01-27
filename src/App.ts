@@ -1,4 +1,5 @@
 import express, { Application } from 'express'
+import { createConnection } from 'typeorm'
 import Config from './Config'
 import VerificationServlet from './VerificationServlet'
 import ExpressEndpointFactory from './http/ExpressEndpointFactory'
@@ -12,9 +13,22 @@ import OcrSpace from './ocr/OcrSpace'
 import Decoder39 from './code39/Decoder39'
 import BarcodeParser from './service/BarcodeParser'
 import BzzCustomerCare from './service/BzzCustomerCare'
+import CardRegistrationDbo from './db/CardRegistrationDbo'
 
 class App {
   static start (config: Config): Promise<void> {
+    createConnection({
+      type: 'postgres',
+      url: config.postgresUrl,
+      entities: [
+        CardRegistrationDbo
+      ],
+      synchronize: true,
+      logging: false
+    }).then((connection) => {
+      console.log(`successful connection ${connection.entityMetadatas}`)
+    }).catch((error) => console.log(error))
+
     const application: Application = express()
 
     const endpoints: ExpressEndpointFactory = new ExpressEndpointFactory()
