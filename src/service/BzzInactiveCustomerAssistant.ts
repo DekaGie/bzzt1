@@ -37,14 +37,14 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
         subtitle: Optional.of('Czym jesteś zainteresowana?'),
         buttons: [
           {
-            text: 'Aktywuj kartę Beauty Zazero',
+            text: 'Aktywuj kartę!',
             command: {
               type: 'INACTIVE_CUSTOMER_ACTION',
               action: 'ACTIVATE'
             }
           },
           {
-            text: 'Wprowadź ten benefit w swojej Firmie',
+            text: 'Obsługa klienta',
             phoneNumber: '+48662097978'
           }
         ]

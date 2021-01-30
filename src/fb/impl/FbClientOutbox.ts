@@ -28,8 +28,7 @@ class FbClientOutbox implements FbMessengerOutbox {
           payload: {
             template_type: 'generic',
             image_aspect_ratio: Optional.ofNullable(generic.topImage)
-              .map((top) => top.squareRatio)
-              .filter((square) => square)
+              .map((top) => top.squareRatio === true)
               ? 'square' : 'horizontal',
             elements: [
               {
