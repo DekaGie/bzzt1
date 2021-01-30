@@ -29,7 +29,7 @@ class FbMessengerPlatform {
         try {
           this.handleEvent(event)
         } catch (error) {
-          console.error(`could not handle event: ${event}`)
+          console.error(`while handling event: ${event}`)
           console.error(error)
         }
       }
@@ -65,39 +65,10 @@ class FbMessengerPlatform {
           .ifPresentOrElse(
             (url) => this.bot.onImage(psid, url, this.outbox),
             () => {
-              console.error(`unexpected message: ${message}`)
+              console.error(`while expecting a certain message: ${message}`)
             }
           )
       )
-      // .flatMap((string) => MessagingServlet.extractNumber(string))
-      // const cardNumber: number = fromText.get()
-      // console.log(`handling from text: ${cardNumber}`)
-      // this.handleNumber(psid, cardNumber)
-      // return
-
-    // const cardUrl: string = imageUrl.get()
-    // console.log(`found attachment: ${cardUrl}`)
-    // this.barcodeParser.parse(cardUrl)
-    //   .then(
-    //     (fromImage) => {
-    //       if (fromImage.isPresent()) {
-    //         const cardNumber: number = fromImage.get()
-    //         console.log(`handling from image: ${cardNumber}`)
-    //         this.handleNumber(psid, cardNumber)
-    //       } else {
-    //         this.respond(psid, 'Postaraj się wykonać z bliska zdjęcie kompletnego kodu kreskowego karty.')
-    //       }
-    //     }
-    //   )
-    //   .catch(
-    //     (error) => {
-    //       console.error('error while detecting card number:')
-    //       console.error(error)
-    //       this.respond(psid, 'Przepraszam, ale coś poszło nie tak. Spróbuj ponownie później.')
-    //     }
-    //   )
-
-    // this.respond(psid, 'Dzień dobry!\nZeskanuj kartę Beauty ZAZERO lub podaj jej numer.')
   }
 
   private handlePostback (psid: string, postback: JsonObject): void {

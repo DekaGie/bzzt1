@@ -1,5 +1,5 @@
-import HttpServlet from './http/HttpServlet'
-import HttpResponse from './http/HttpResponse'
+import HttpServlet from '../http/HttpServlet'
+import HttpResponse from '../http/HttpResponse'
 
 class PrivacyPolicyServlet implements HttpServlet {
   handle (): Promise<HttpResponse> {

@@ -1,8 +1,8 @@
-import HttpServlet from './http/HttpServlet'
-import HttpResponse from './http/HttpResponse'
-import HttpRequest from './http/HttpRequest'
-import HttpError from './http/HttpError'
-import FbMessengerPlatform from './fb/FbMessengerPlatform'
+import HttpRequest from '../http/HttpRequest'
+import FbMessengerPlatform from '../fb/FbMessengerPlatform'
+import HttpServlet from '../http/HttpServlet'
+import HttpResponse from '../http/HttpResponse'
+import HttpError from '../http/HttpError'
 
 class MessagingServlet implements HttpServlet {
   private readonly fbMessengerPlatform: FbMessengerPlatform;

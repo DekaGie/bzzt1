@@ -1,5 +1,7 @@
+import { Optional } from 'typescript-optional'
 import FbClient from './FbClient'
 import FbMessengerOutbox from '../FbMessengerOutbox'
+import FbGenericTemplate from '../FbGenericTemplate'
 
 class FbClientOutbox implements FbMessengerOutbox {
   private readonly fbClient: FbClient;
@@ -17,7 +19,7 @@ class FbClientOutbox implements FbMessengerOutbox {
     )
   }
 
-  sendImage (psid: string, url: string, caption: string): void {
+  sendGenericTemplate (psid: string, generic: FbGenericTemplate): void {
     this.send(
       psid,
       {
@@ -25,11 +27,24 @@ class FbClientOutbox implements FbMessengerOutbox {
           type: 'template',
           payload: {
             template_type: 'generic',
-            image_aspect_ratio: 'square',
+            image_aspect_ratio: Optional.ofNullable(generic.topImage)
+              .map((top) => top.squareRatio)
+              .filter((square) => square)
+              ? 'square' : 'horizontal',
             elements: [
               {
-                title: caption,
-                image_url: url
+                title: generic.title,
+                subtitle: generic.subtitle,
+                image_url: Optional.ofNullable(generic.topImage)
+                  .map((top) => top.url)
+                  .orElse(null),
+                buttons: generic.buttons.map(
+                  (button) => ({
+                    type: 'postback' in button ? 'postback' : 'phone_number',
+                    title: button.text,
+                    payload: 'postback' in button ? button.postback : button.phoneNumber,
+                  })
+                )
               }
             ]
           }
@@ -38,8 +53,13 @@ class FbClientOutbox implements FbMessengerOutbox {
     )
   }
 
-  send (psid: string, message: object): void {
-    this.fbClient.send(psid, message).catch(console.error)
+  private send (psid: string, message: object): void {
+    this.fbClient.send(psid, message).catch(
+      (error) => {
+        console.error(`while sending to ${psid}: ${JSON.stringify(message)}`)
+        console.error(error)
+      }
+    )
   }
 }
 

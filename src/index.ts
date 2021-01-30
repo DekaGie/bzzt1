@@ -12,5 +12,9 @@ App.start(
 ).then(
   () => {
     console.log('server is listening')
+  },
+  (error) => {
+    console.error('while starting:')
+    console.error(error)
   }
 )

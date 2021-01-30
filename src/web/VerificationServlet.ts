@@ -1,7 +1,7 @@
-import HttpServlet from './http/HttpServlet'
-import HttpResponse from './http/HttpResponse'
-import HttpRequest from './http/HttpRequest'
-import HttpError from './http/HttpError'
+import HttpServlet from '../http/HttpServlet'
+import HttpRequest from '../http/HttpRequest'
+import HttpResponse from '../http/HttpResponse'
+import HttpError from '../http/HttpError'
 
 class VerificationServlet implements HttpServlet {
   private readonly verifyToken: string;

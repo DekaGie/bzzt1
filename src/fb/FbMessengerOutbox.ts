@@ -1,8 +1,10 @@
+import FbGenericTemplate from './FbGenericTemplate'
+
 interface FbMessengerOutbox {
 
   sendText (psid: string, text: string): void
 
-  sendImage (psid: string, url: string, caption: string): void;
+  sendGenericTemplate (psid: string, generic: FbGenericTemplate): void;
 }
 
 export default FbMessengerOutbox

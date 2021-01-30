@@ -1,9 +1,9 @@
-import HttpFilter from './http/HttpFilter'
-import HttpRequest from './http/HttpRequest'
-import HttpServlet from './http/HttpServlet'
-import HttpResponse from './http/HttpResponse'
-import Promises from './util/Promises'
-import HttpError from './http/HttpError'
+import HttpRequest from '../http/HttpRequest'
+import HttpServlet from '../http/HttpServlet'
+import Promises from '../util/Promises'
+import HttpResponse from '../http/HttpResponse'
+import HttpFilter from '../http/HttpFilter'
+import HttpError from '../http/HttpError'
 
 class ErrorFilter implements HttpFilter {
   handle (request: HttpRequest, servlet: HttpServlet): Promise<HttpResponse> {

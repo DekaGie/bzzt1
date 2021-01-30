@@ -24,9 +24,7 @@ class FbClient {
     ).then(
       (response) => {
         if (response.status !== 200) {
-          throw new Error(
-            `could not send ${psid} "${message}"; received HTTP ${response.status}: ${response.data}`
-          )
+          throw new Error(`received HTTP ${response.status}: ${JSON.stringify(response.data)}`)
         }
       }
     )
