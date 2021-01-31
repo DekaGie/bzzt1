@@ -1,4 +1,3 @@
-import { Equal } from 'typeorm'
 import { Optional } from 'typescript-optional'
 import CustomerId from './domain/CustomerId'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
@@ -6,16 +5,18 @@ import InteractionCallback from './spi/InteractionCallback'
 import BarcodeParser from './BarcodeParser'
 import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import BzzInactiveCustomerAssistant from './BzzInactiveCustomerAssistant'
-import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
 import BzzActiveCustomerAssistant from './BzzActiveCustomerAssistant'
 import FbProfileFetcher from '../fb/FbProfileFetcher'
 import FbProfile from '../fb/FbProfile'
 import CustomerExternalInfo from './CustomerExternalInfo'
 import ImageUrl from './domain/ImageUrl'
 import Gender from './Gender'
+import CardRepository from '../db/repo/CardRepository'
 
 class BzzCustomerCare {
   private readonly profileFetcher: FbProfileFetcher;
+
+  private readonly cardRepository: CardRepository;
 
   private readonly barcodeParser: BarcodeParser
 
@@ -24,9 +25,11 @@ class BzzCustomerCare {
   constructor (
     profileFetcher: FbProfileFetcher,
     registrationRepository: CardRegistrationRepository,
+    cardRepository: CardRepository,
     barcodeParser: BarcodeParser
   ) {
     this.profileFetcher = profileFetcher
+    this.cardRepository = cardRepository
     this.registrationRepository = registrationRepository
     this.barcodeParser = barcodeParser
   }
@@ -34,7 +37,8 @@ class BzzCustomerCare {
   assistantFor (
     cid: CustomerId, callback: InteractionCallback
   ): Promise<BzzCustomerAssistant> {
-    return this.findRegistration(cid)
+    return this.registrationRepository.findFull(cid.toRepresentation())
+      .then(Optional.ofNullable)
       .then(
         (registration) => {
           if (registration.isPresent()) {
@@ -46,6 +50,7 @@ class BzzCustomerCare {
             .then(
               (profile) => new BzzInactiveCustomerAssistant(
                 this.registrationRepository,
+                this.cardRepository,
                 this.barcodeParser,
                 profile.map((fetched) => BzzCustomerCare.toCustomerInfo(cid, fetched))
                   .orElseGet(() => BzzCustomerCare.toUnknownCustomerInfo(cid)),
@@ -54,19 +59,6 @@ class BzzCustomerCare {
             )
         }
       )
-  }
-
-  private findRegistration (cid: CustomerId): Promise<Optional<CardRegistrationDbo>> {
-    return this.registrationRepository
-      .findOne(
-        {
-          customerId: Equal(cid.toRepresentation())
-        },
-        {
-          join: CardRegistrationDbo.WITH_CARD
-        }
-      )
-      .then(Optional.ofNullable)
   }
 
   private static toCustomerInfo (

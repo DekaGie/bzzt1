@@ -1,7 +1,13 @@
 import {
-  Column, Entity, OneToOne, PrimaryColumn
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryColumn
 } from 'typeorm'
 import CardRegistrationDbo from './CardRegistrationDbo'
+import AgreementDbo from './AgreementDbo'
 
 @Entity()
 class CardDbo {
@@ -14,6 +20,13 @@ class CardDbo {
     { nullable: true }
   )
   registration: CardRegistrationDbo | null;
+
+  @ManyToOne(
+    () => AgreementDbo,
+    { nullable: false, onDelete: 'RESTRICT' }
+  )
+  @JoinColumn()
+  agreement: AgreementDbo;
 
   @Column({ type: 'double precision', nullable: false })
   validUntilEs: number;

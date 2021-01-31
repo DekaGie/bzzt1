@@ -1,17 +1,10 @@
 import {
-  Column, Entity, JoinColumn, JoinOptions, OneToOne, PrimaryColumn
+  Column, Entity, JoinColumn, OneToOne, PrimaryColumn
 } from 'typeorm'
 import CardDbo from './CardDbo'
 
 @Entity()
 class CardRegistrationDbo {
-  static readonly WITH_CARD: JoinOptions = {
-    alias: 'registration',
-    leftJoinAndSelect: {
-      card: 'registration.card'
-    }
-  }
-
   @PrimaryColumn()
   customerId: string;
 

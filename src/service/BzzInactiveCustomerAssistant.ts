@@ -3,11 +3,14 @@ import { isDeepStrictEqual } from 'util'
 import InteractionCallback from './spi/InteractionCallback'
 import ImageUrl from './domain/ImageUrl'
 import BarcodeParser from './BarcodeParser'
-import CardChecker from './CardChecker'
 import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
 import StaticImageUrls from './StaticImageUrls'
 import CustomerExternalInfo from './CustomerExternalInfo'
+import CardRepository from '../db/repo/CardRepository'
+import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
+import CardDbo from '../db/dbo/CardDbo'
+import BzzActiveCustomerAssistant from './BzzActiveCustomerAssistant'
 
 class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
   private static ACTIVATE: any = {
@@ -17,6 +20,8 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
 
   private readonly registrationRepository: CardRegistrationRepository;
 
+  private readonly cardRepository: CardRepository;
+
   private readonly barcodeParser: BarcodeParser;
 
   private readonly customerInfo: CustomerExternalInfo;
@@ -25,11 +30,13 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
 
   constructor (
     registrationRepository: CardRegistrationRepository,
+    cardRepository: CardRepository,
     barcodeParser: BarcodeParser,
     customerInfo: CustomerExternalInfo,
     callback: InteractionCallback
   ) {
     this.registrationRepository = registrationRepository
+    this.cardRepository = cardRepository
     this.barcodeParser = barcodeParser
     this.customerInfo = customerInfo
     this.callback = callback
@@ -74,7 +81,7 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
       this.callback.sendText('Przepraszam, nie zrozumiałem Cię.')
       return
     }
-    this.callback.sendText('Ok :) W takim razie zeskanuj swoją kartę Beauty Zazero lub podaj mi jej numer.')
+    this.callback.sendText('Dobrze :)\nW takim razie zeskanuj swoją kartę Beauty Zazero lub podaj mi jej numer.')
   }
 
   onImage (url: ImageUrl): void {
@@ -90,7 +97,55 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
   }
 
   private validateAndRegister (cardNumber: number) {
-    this.callback.sendText(new CardChecker().check(cardNumber))
+    this.cardRepository.findFull(cardNumber)
+      .then(Optional.ofNullable)
+      .then(
+        (optionalCard) => {
+          if (!optionalCard.isPresent()) {
+            this.callback.sendText(`Hmmm, ${cardNumber}?\nTo nie wygląda jak prawidłowy numer karty Beauty Zazero :(`)
+          }
+          const card: CardDbo = optionalCard.get()
+          // TODO: check validity
+          this.register(card)
+            .then(
+              (success) => {
+                if (success) {
+                  this.promptActive(card)
+                } else {
+                  this.callback.sendText(
+                    'Przepraszam, ale wystąpił błąd podczas rejestracji.\n'
+                        + 'Skontaktuje się z Tobą nasz przedstawiciel.'
+                  )
+                }
+              }
+            )
+        }
+      )
+      .catch(
+        (error) => {
+          console.error(`while validating card ${cardNumber}`)
+          console.error(error)
+        }
+      )
+  }
+
+  private promptActive (card: CardDbo): void {
+    this.callback.sendText(
+      `Świetnie!\nTwoja karta numer ${card.cardNumber} (od ${card.agreement.employerName}) została aktywowana!`
+    )
+    this.callback.sendOptions(
+      {
+        topImage: Optional.empty(),
+        title: 'Pewnie zastanawiasz się gdzie możesz jej użyć?',
+        subtitle: Optional.empty(),
+        buttons: [
+          {
+            command: BzzActiveCustomerAssistant.SHOW_PARTNERS,
+            text: 'Tak!'
+          }
+        ]
+      }
+    )
   }
 
   private static extractNumber (string: string): Optional<number> {
@@ -102,6 +157,22 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
       .filter((string) => string.length === 9)
       .map((string) => Number.parseInt(string, 10))
       .filter((integer) => !Number.isNaN(integer))
+  }
+
+  private register (card: CardDbo): Promise<boolean> {
+    const registration: CardRegistrationDbo = new CardRegistrationDbo()
+    registration.card = card
+    registration.customerId = this.customerInfo.id.toRepresentation()
+    registration.manualAnnotation = 'Pierwsze testowe, ufać bez identyfikacji!'
+    return this.registrationRepository.save(registration)
+      .then(() => true)
+      .catch(
+        (error) => {
+          console.error(`while registering ${card.cardNumber} to ${this.customerInfo.id}`)
+          console.error(error)
+          return false
+        }
+      )
   }
 }
 

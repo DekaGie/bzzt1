@@ -4,6 +4,11 @@ import BzzCustomerAssistant from './BzzCustomerAssistant'
 import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
 
 class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
+  static SHOW_PARTNERS: any = {
+    type: 'ACTIVE_CUSTOMER_ACTION',
+    action: 'SHOW_PARTNERS'
+  }
+
   private readonly registration: CardRegistrationDbo;
 
   private readonly callback: InteractionCallback;
