@@ -28,7 +28,7 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
 
   onCommand (command: any): void {
     console.error(`received unexpected command: ${JSON.stringify(command)}`)
-    this.callback.sendText('Przepraszam, nie zrozumiałem Cię.')
+    this.callback.sendText(`Przepraszam, nie zrozumiałem Cię, ${this.registration.card.cardNumber}`)
   }
 }
 

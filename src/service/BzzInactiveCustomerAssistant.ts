@@ -130,14 +130,13 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
   }
 
   private promptActive (card: CardDbo): void {
-    this.callback.sendText(
-      `Świetnie!\nTwoja karta numer ${card.cardNumber} (od ${card.agreement.employerName}) została aktywowana!`
-    )
     this.callback.sendOptions(
       {
         topImage: Optional.empty(),
-        title: 'Pewnie zastanawiasz się gdzie możesz jej użyć?',
-        subtitle: Optional.empty(),
+        title: 'Świetnie!',
+        subtitle: Optional.of(
+          `Twoja karta numer ${card.cardNumber} (od ${card.agreement.employerName}) została aktywowana!\nPewnie zastanawiasz się, gdzie jej użyć?`
+        ),
         buttons: [
           {
             command: BzzActiveCustomerAssistant.SHOW_PARTNERS,

@@ -13,9 +13,8 @@ class FbProfileFetcher {
     return this.fbClient.getProfile(psid)
       .then(
         (profile) => Optional.of(profile),
-        (error) => {
+        () => {
           console.error(`while fetching profile of ${psid}`)
-          console.error(error)
           return Optional.empty()
         }
       )
