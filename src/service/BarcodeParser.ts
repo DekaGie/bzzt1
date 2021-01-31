@@ -48,6 +48,7 @@ class BarcodeParser {
         (image) => {
           const decoded: Optional<number> = this.decoder.decode(image)
           if (decoded.isPresent()) {
+            console.info(`parsed locally ${decoded.get()}: ${url}`)
             return decoded
           }
           return this.ocrSpace.recognize(imageUrl)

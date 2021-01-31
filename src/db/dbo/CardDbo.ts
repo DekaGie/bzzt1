@@ -28,9 +28,6 @@ class CardDbo {
   @JoinColumn()
   agreement: AgreementDbo;
 
-  @Column({ type: 'double precision', nullable: false })
-  validUntilEs: number;
-
   @Column({ type: 'text', nullable: false, default: '' })
   manualAnnotation: string;
 }
