@@ -72,7 +72,7 @@ class FbMessengerPlatform {
   }
 
   private handlePostback (psid: string, postback: JsonObject): void {
-
+    this.bot.onPostback(psid, postback.mandatory('payload').asString(), this.outbox)
   }
 
   // private handleNumber (senderId: string, cardNumber: number): void {

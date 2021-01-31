@@ -1,4 +1,5 @@
 import { Optional } from 'typescript-optional'
+import { isDeepStrictEqual } from 'util'
 import InteractionCallback from './spi/InteractionCallback'
 import ImageUrl from './domain/ImageUrl'
 import BarcodeParser from './BarcodeParser'
@@ -9,6 +10,11 @@ import StaticImageUrls from './StaticImageUrls'
 import CustomerExternalInfo from './CustomerExternalInfo'
 
 class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
+  private static ACTIVATE: any = {
+    type: 'INACTIVE_CUSTOMER_ACTION',
+    action: 'ACTIVATE'
+  }
+
   private readonly registrationRepository: CardRegistrationRepository;
 
   private readonly barcodeParser: BarcodeParser;
@@ -38,6 +44,11 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
       )
       return
     }
+    const cardNumber: Optional<number> = BzzInactiveCustomerAssistant.extractNumber(text)
+    if (cardNumber.isPresent()) {
+      this.validateAndRegister(cardNumber.get())
+      return
+    }
     this.callback.sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
@@ -46,10 +57,7 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
         buttons: [
           {
             text: 'Aktywuj kartę!',
-            command: {
-              type: 'INACTIVE_CUSTOMER_ACTION',
-              action: 'ACTIVATE'
-            }
+            command: BzzInactiveCustomerAssistant.ACTIVATE
           },
           {
             text: 'Obsługa klienta',
@@ -58,11 +66,15 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
         ]
       }
     )
-    // BzzInactiveCustomerAssistant.extractNumber(text)
-    //   .ifPresentOrElse(
-    //     (cardNumber) => this.onCardNumber(cardNumber),
-    //     () => this.callback.sendText('Zeskanuj kartę Beauty Zazero lub podaj jej numer.')
-    //   )
+  }
+
+  onCommand (command: any): void {
+    if (!isDeepStrictEqual(command, BzzInactiveCustomerAssistant.ACTIVATE)) {
+      console.error(`received unexpected command: ${JSON.stringify(command)}`)
+      this.callback.sendText('Przepraszam, nie zrozumiałem Cię.')
+      return
+    }
+    this.callback.sendText('Ok :) W takim razie zeskanuj swoją kartę Beauty Zazero lub podaj mi jej numer.')
   }
 
   onImage (url: ImageUrl): void {
@@ -70,26 +82,26 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
       .then(
         (fromImage) => {
           fromImage.ifPresentOrElse(
-            (cardNumber) => this.onCardNumber(cardNumber),
+            (cardNumber) => this.validateAndRegister(cardNumber),
             () => this.callback.sendText('Postaraj się wykonać z bliska zdjęcie kompletnego kodu kreskowego karty.')
           )
         }
       )
   }
 
-  private onCardNumber (cardNumber: number) {
+  private validateAndRegister (cardNumber: number) {
     this.callback.sendText(new CardChecker().check(cardNumber))
   }
 
   private static extractNumber (string: string): Optional<number> {
     return Optional.of(
-      Number.parseInt(
-        Array.from(string)
-          .filter((char) => char >= '0' && char <= '9')
-          .reduce((left, right) => left + right, ''),
-        10
-      )
-    ).filter((value) => !Number.isNaN(value))
+      Array.from(string)
+        .filter((char) => char >= '0' && char <= '9')
+        .reduce((left, right) => left + right, '')
+    )
+      .filter((string) => string.length === 9)
+      .map((string) => Number.parseInt(string, 10))
+      .filter((integer) => !Number.isNaN(integer))
   }
 }
 

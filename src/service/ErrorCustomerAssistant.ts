@@ -17,6 +17,10 @@ class ErrorCustomerAssistant implements BzzCustomerAssistant {
     this.onError()
   }
 
+  onCommand (command: any): void {
+    this.onError()
+  }
+
   private onError () {
     this.callback.sendText('Przepraszam, ale wystąpił błąd po stronie systemu Beauty Zazero. '
         + 'Skontaktuje się z Tobą nasz przedstawiciel.')

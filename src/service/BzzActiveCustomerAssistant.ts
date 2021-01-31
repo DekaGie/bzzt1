@@ -20,6 +20,11 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
   onImage (url: ImageUrl): void {
     this.callback.sendImage(url, `Oto co wysłał mi posiadacz karty ${this.registration.card.cardNumber}`)
   }
+
+  onCommand (command: any): void {
+    console.error(`received unexpected command: ${JSON.stringify(command)}`)
+    this.callback.sendText('Przepraszam, nie zrozumiałem Cię.')
+  }
 }
 
 export default BzzActiveCustomerAssistant

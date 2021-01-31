@@ -86,6 +86,12 @@ class BzzBot implements FbMessengerBot {
     )
   }
 
+  onPostback (psid: string, payload: string, outbox: FbMessengerOutbox) {
+    this.getAssistant(psid, outbox).then(
+      (assistant) => assistant.onCommand(JSON.parse(payload))
+    )
+  }
+
   private getAssistant (
     psid: string, outbox: FbMessengerOutbox
   ): Promise<BzzCustomerAssistant> {
