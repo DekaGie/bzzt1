@@ -6,7 +6,6 @@ import CardChecker from './CardChecker'
 import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
 import StaticImageUrls from './StaticImageUrls'
-import Gender from './Gender'
 import CustomerExternalInfo from './CustomerExternalInfo'
 
 class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
@@ -32,16 +31,17 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
 
   onText (text: string): void {
     if (text === '!CustomerExternalInfo') {
-      this.callback.sendImage(
-        this.customerInfo.picture,
-        `${this.customerInfo.firstName} ${this.customerInfo.lastName} (${this.customerInfo.id})`
+      const info: string = `${this.customerInfo.firstName} ${this.customerInfo.lastName} (${this.customerInfo.id})`
+      this.customerInfo.picture.ifPresentOrElse(
+        (picture) => this.callback.sendImage(picture, info),
+        () => this.callback.sendText(info)
       )
       return
     }
     this.callback.sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
-        title: `Hej, ${this.customerInfo.firstName}!`,
+        title: `Hej, ${this.customerInfo.shorthand()}!`,
         subtitle: Optional.of(`Czym jesteś zainteresowan${this.customerInfo.gender.mSuffix}?`),
         buttons: [
           {

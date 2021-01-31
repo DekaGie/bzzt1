@@ -1,5 +1,6 @@
 import axios from 'axios'
 import FbProfile from '../FbProfile'
+import Objects from '../../util/Objects'
 
 class FbClient {
   private readonly accessToken: string;
@@ -13,7 +14,6 @@ class FbClient {
       `https://graph.facebook.com/${psid}`,
       {
         params: {
-          fields: 'first_name,last_name,profile_pic',
           access_token: this.accessToken
         }
       }
@@ -25,7 +25,7 @@ class FbClient {
         return {
           firstName: response.data.first_name,
           lastName: response.data.last_name,
-          pictureUrl: response.data.profile_pic
+          pictureUrl: Objects.define(response.data.profile_pic)
         }
       }
     )

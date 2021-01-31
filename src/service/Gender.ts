@@ -1,7 +1,7 @@
 class Gender {
-  private static FEMALE: Gender = new Gender('a')
+  static FEMALE: Gender = new Gender('a')
 
-  private static MALE: Gender = new Gender('y')
+  static MALE: Gender = new Gender('y')
 
   readonly mSuffix: string;
 

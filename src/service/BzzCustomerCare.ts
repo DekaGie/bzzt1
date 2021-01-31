@@ -9,7 +9,6 @@ import BzzInactiveCustomerAssistant from './BzzInactiveCustomerAssistant'
 import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
 import BzzActiveCustomerAssistant from './BzzActiveCustomerAssistant'
 import FbProfileFetcher from '../fb/FbProfileFetcher'
-import ErrorCustomerAssistant from './ErrorCustomerAssistant'
 import FbProfile from '../fb/FbProfile'
 import CustomerExternalInfo from './CustomerExternalInfo'
 import ImageUrl from './domain/ImageUrl'
@@ -45,17 +44,13 @@ class BzzCustomerCare {
           }
           return this.profileFetcher.fetch(cid.toRepresentation())
             .then(
-              (profile) => {
-                if (!profile.isPresent()) {
-                  return new ErrorCustomerAssistant(callback)
-                }
-                return new BzzInactiveCustomerAssistant(
-                  this.registrationRepository,
-                  this.barcodeParser,
-                  BzzCustomerCare.toCustomerInfo(cid, profile.get()),
-                  callback
-                )
-              }
+              (profile) => new BzzInactiveCustomerAssistant(
+                this.registrationRepository,
+                this.barcodeParser,
+                profile.map((fetched) => BzzCustomerCare.toCustomerInfo(cid, fetched))
+                  .orElseGet(() => BzzCustomerCare.toUnknownCustomerInfo(cid)),
+                callback
+              )
             )
         }
       )
@@ -82,7 +77,13 @@ class BzzCustomerCare {
       profile.firstName,
       profile.lastName,
       Gender.discover(profile.firstName),
-      new ImageUrl(profile.pictureUrl)
+      Optional.ofNullable(profile.pictureUrl).map((url) => new ImageUrl(url))
+    )
+  }
+
+  private static toUnknownCustomerInfo (cid: CustomerId): CustomerExternalInfo {
+    return new CustomerExternalInfo(
+      cid, '', '', Gender.FEMALE, Optional.empty()
     )
   }
 }

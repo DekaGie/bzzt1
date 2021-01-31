@@ -4,7 +4,7 @@ interface FbProfile {
 
   lastName: string,
 
-  pictureUrl: string
+  pictureUrl: string | null
 }
 
 export default FbProfile

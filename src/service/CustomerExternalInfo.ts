@@ -1,3 +1,4 @@
+import { Optional } from 'typescript-optional'
 import Gender from './Gender'
 import ImageUrl from './domain/ImageUrl'
 import CustomerId from './domain/CustomerId'
@@ -11,20 +12,24 @@ class CustomerExternalInfo {
 
   readonly gender: Gender;
 
-  readonly picture: ImageUrl;
+  readonly picture: Optional<ImageUrl>;
 
   constructor (
     id: CustomerId,
     firstName: string,
     lastName: string,
     gender: Gender,
-    picture: ImageUrl
+    picture: Optional<ImageUrl>
   ) {
     this.id = id
     this.firstName = firstName
     this.lastName = lastName
     this.gender = gender
     this.picture = picture
+  }
+
+  shorthand (): string {
+    return this.firstName === '' ? 'nieznajoma' : this.firstName
   }
 }
 
