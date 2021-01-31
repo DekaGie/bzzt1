@@ -7,7 +7,6 @@ import ExpressEndpointFactory from '../http/ExpressEndpointFactory'
 import PrivacyPolicyServlet from './PrivacyPolicyServlet'
 import VerificationServlet from './VerificationServlet'
 import ErrorFilter from './ErrorFilter'
-import FbClient from '../fb/impl/FbClient'
 import MessagingServlet from './MessagingServlet'
 
 class ServerStarter {
@@ -32,7 +31,7 @@ class ServerStarter {
       endpoints.servlet(
         new MessagingServlet(
           new FbMessengerPlatform(
-            new FbClient(config.accessToken),
+            locator.fbClient.refer(),
             locator.bot.refer()
           )
         )

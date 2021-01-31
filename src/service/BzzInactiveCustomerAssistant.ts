@@ -1,5 +1,4 @@
 import { Optional } from 'typescript-optional'
-import CustomerId from './domain/CustomerId'
 import InteractionCallback from './spi/InteractionCallback'
 import ImageUrl from './domain/ImageUrl'
 import BarcodeParser from './BarcodeParser'
@@ -7,34 +6,43 @@ import CardChecker from './CardChecker'
 import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
 import StaticImageUrls from './StaticImageUrls'
+import Gender from './Gender'
+import CustomerExternalInfo from './CustomerExternalInfo'
 
 class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
   private readonly registrationRepository: CardRegistrationRepository;
 
   private readonly barcodeParser: BarcodeParser;
 
-  private readonly cid: CustomerId;
+  private readonly customerInfo: CustomerExternalInfo;
 
   private readonly callback: InteractionCallback;
 
   constructor (
     registrationRepository: CardRegistrationRepository,
     barcodeParser: BarcodeParser,
-    cid: CustomerId,
+    customerInfo: CustomerExternalInfo,
     callback: InteractionCallback
   ) {
     this.registrationRepository = registrationRepository
     this.barcodeParser = barcodeParser
-    this.cid = cid
+    this.customerInfo = customerInfo
     this.callback = callback
   }
 
   onText (text: string): void {
+    if (text === '!CustomerExternalInfo') {
+      this.callback.sendImage(
+        this.customerInfo.picture,
+        `${this.customerInfo.firstName} ${this.customerInfo.lastName} (${this.customerInfo.id})`
+      )
+      return
+    }
     this.callback.sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
-        title: 'Hej!',
-        subtitle: Optional.of('Czym jesteś zainteresowana?'),
+        title: `Hej, ${this.customerInfo.firstName}!`,
+        subtitle: Optional.of(`Czym jesteś zainteresowan${this.customerInfo.gender.mSuffix}?`),
         buttons: [
           {
             text: 'Aktywuj kartę!',
