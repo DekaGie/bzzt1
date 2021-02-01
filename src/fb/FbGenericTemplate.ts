@@ -1,4 +1,4 @@
-import { FbPostbackButton, FbCallButton } from './FbButtons'
+import { FbCallButton, FbLinkButton, FbPostbackButton } from './FbButtons'
 
 interface TopImage {
 
@@ -15,7 +15,7 @@ interface FbGenericTemplate {
 
   subtitle?: string,
 
-  buttons: Array<FbPostbackButton | FbCallButton>
+  buttons: Array<FbPostbackButton | FbLinkButton | FbCallButton>
 }
 
 export default FbGenericTemplate

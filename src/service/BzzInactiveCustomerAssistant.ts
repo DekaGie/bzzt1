@@ -43,12 +43,36 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
   }
 
   onText (text: string): void {
-    if (text === '!CustomerExternalInfo') {
+    if (text === '!me') {
       const info: string = `${this.customerInfo.firstName} ${this.customerInfo.lastName} (${this.customerInfo.id})`
       this.customerInfo.picture.ifPresentOrElse(
         (picture) => this.callback.sendImage(picture, info),
         () => this.callback.sendText(info)
       )
+      return
+    }
+    if (text.startsWith('!spr')) {
+      const cardNumber: Optional<number> = BzzInactiveCustomerAssistant.extractNumber(text)
+      if (cardNumber.isPresent()) {
+        this.cardRepository.findFull(cardNumber.get())
+          .then(Optional.ofNullable)
+          .then(
+            (optionalCard) => {
+              if (optionalCard.isPresent()) {
+                const reg: Optional<CardRegistrationDbo> = Optional.ofNullable(optionalCard.get().registration)
+                if (reg.isPresent()) {
+                  this.callback.sendText(`Ma za darmo 1:1, laminację rzęs, wszystko na brwi oraz depilację twarzy woskiem (płaci za nią firma ${optionalCard.get().agreement.employerName}).`)
+                } else {
+                  this.callback.sendText('Karta nie została aktywowana! (Klientka musi zagadać do tego samego bota)')
+                }
+              } else {
+                this.callback.sendText('Błędny numer karty!')
+              }
+            }
+          )
+      } else {
+        this.callback.sendText('Podaj numer karty, np. "!spr 141520103')
+      }
       return
     }
     const cardNumber: Optional<number> = BzzInactiveCustomerAssistant.extractNumber(text)

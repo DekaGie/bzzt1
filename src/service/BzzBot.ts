@@ -56,10 +56,7 @@ class LocalInteractionCallback implements InteractionCallback {
                 text: button.text,
                 postback: JSON.stringify(button.command)
               }
-              : {
-                text: button.text,
-                phoneNumber: button.phoneNumber
-              }
+              : button
           )
         )
       }

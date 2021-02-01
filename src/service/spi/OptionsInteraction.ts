@@ -11,6 +11,11 @@ interface CommandButton extends Button {
   command: any
 }
 
+interface LinkButton extends Button {
+
+  url: string
+}
+
 interface PhoneButton extends Button {
 
   phoneNumber: string
@@ -24,7 +29,7 @@ interface OptionsInteraction {
 
   subtitle: Optional<string>,
 
-  buttons: Array<CommandButton | PhoneButton>
+  buttons: Array<CommandButton | LinkButton | PhoneButton>
 }
 
 export default OptionsInteraction

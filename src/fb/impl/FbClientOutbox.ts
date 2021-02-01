@@ -40,9 +40,11 @@ class FbClientOutbox implements FbMessengerOutbox {
                   .orElse(null),
                 buttons: generic.buttons.map(
                   (button) => ({
-                    type: 'postback' in button ? 'postback' : 'phone_number',
+                    // eslint-disable-next-line no-nested-ternary
+                    type: 'postback' in button ? 'postback' : ('url' in button ? 'web_url' : 'phone_number'),
                     title: button.text,
-                    payload: 'postback' in button ? button.postback : button.phoneNumber,
+                    // eslint-disable-next-line no-nested-ternary
+                    payload: 'postback' in button ? button.postback : ('url' in button ? button.url : button.phoneNumber),
                   })
                 )
               }
