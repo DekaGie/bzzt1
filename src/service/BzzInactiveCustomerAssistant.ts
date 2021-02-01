@@ -130,7 +130,7 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
             return
           }
           const card: CardDbo = optionalCard.get()
-          if (Optional.of(card.registration).isPresent()) {
+          if (Optional.ofNullable(card.registration).isPresent()) {
             this.callback.sendText('Ta karta została już aktywowana przez kogoś innego.')
             return
           }
