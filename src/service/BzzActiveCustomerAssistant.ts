@@ -60,10 +60,9 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
         topImage: Optional.of(StaticImageUrls.POWER_BANNER),
         title: 'Power Brows',
         subtitle: Optional.of(
-          'Zapraszamy na:\n'
-              + '- regulację, koloryzację i laminację brwi,\n'
-              + '- laminację i hennę rzęs,\n'
-              + '- depilację twarzy woskiem.'
+          '- Wszystko dla brwi\n'
+              + '- Rzęsy: laminacja i henna\n'
+              + '- Depilacja twarzy woskiem'
         ),
         buttons: [
           {
@@ -82,10 +81,8 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
         topImage: Optional.of(StaticImageUrls.GINGER_BANNER),
         title: 'Ginger Zone',
         subtitle: Optional.of(
-          'Zapraszamy na:\n'
-              + '- przedłużanie rzęs 1:1,\n'
-              + '- laminację i hennę rzęs.\n'
-              + '- regulację i koloryzację brwi.'
+          '- Rzęsy: przedłużanie 1:1, laminacja i henna\n'
+              + '- Wszystko dla brwi'
         ),
         buttons: [
           {
