@@ -61,7 +61,7 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
               if (optionalCard.isPresent()) {
                 const reg: Optional<CardRegistrationDbo> = Optional.ofNullable(optionalCard.get().registration)
                 if (reg.isPresent()) {
-                  this.callback.sendText(`Ma za darmo 1:1, laminację rzęs, wszystko na brwi oraz depilację twarzy woskiem (płaci za nią firma ${optionalCard.get().agreement.employerName}).`)
+                  this.callback.sendText(`Ma za darmo 1:1, laminację i hennę rzęs, wszystko na brwi oraz depilację twarzy woskiem (płaci za nią firma ${optionalCard.get().agreement.employerName}).`)
                 } else {
                   this.callback.sendText('Karta nie została aktywowana! (Klientka musi zagadać do tego samego bota)')
                 }
@@ -127,9 +127,14 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
         (optionalCard) => {
           if (!optionalCard.isPresent()) {
             this.callback.sendText(`Hmmm, ${cardNumber}?\nTo nie wygląda jak prawidłowy numer karty Beauty Zazero :(`)
+            return
           }
           const card: CardDbo = optionalCard.get()
-          // TODO: check validity
+          if (Optional.of(card.registration).isPresent()) {
+            this.callback.sendText('Ta karta została już aktywowana przez kogoś innego.')
+            return
+          }
+          // TODO: check validity period
           this.register(card)
             .then(
               (success) => {
@@ -159,7 +164,7 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
         topImage: Optional.empty(),
         title: 'Świetnie!',
         subtitle: Optional.of(
-          `Twoja karta numer ${card.cardNumber} (od ${card.agreement.employerName}) została aktywowana!\nPewnie zastanawiasz się, gdzie jej użyć?`
+          `Twoja karta od ${card.agreement.employerName} została aktywowana!\nChcesz wiedzieć gdzie jej użyć?`
         ),
         buttons: [
           {
