@@ -2,7 +2,7 @@ import ImageUrl from './domain/ImageUrl'
 
 class StaticImageUrls {
   static HORIZONTAL_LOGO: ImageUrl = new ImageUrl(
-    'https://u.teknik.io/qr6NV.jpg'
+    'https://u.teknik.io/ut513.jpg'
   );
 
   static POWER_BANNER: ImageUrl = new ImageUrl(
