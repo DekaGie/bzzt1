@@ -6,77 +6,57 @@ import BarcodeParser from './BarcodeParser'
 import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import BzzInactiveCustomerAssistant from './BzzInactiveCustomerAssistant'
 import BzzActiveCustomerAssistant from './BzzActiveCustomerAssistant'
-import FbProfileFetcher from '../fb/FbProfileFetcher'
-import FbProfile from '../fb/FbProfile'
-import CustomerExternalInfo from './CustomerExternalInfo'
-import ImageUrl from './domain/ImageUrl'
-import Gender from './Gender'
 import CardRepository from '../db/repo/CardRepository'
+import SalonRepository from '../db/repo/SalonRepository'
+import SalonRegistrationRepository
+  from '../db/repo/SalonRegistrationRepository'
 
 class BzzCustomerCare {
-  private readonly profileFetcher: FbProfileFetcher;
+  private readonly barcodeParser: BarcodeParser
 
   private readonly cardRepository: CardRepository;
 
-  private readonly barcodeParser: BarcodeParser
+  private readonly cardRegistrationRepository: CardRegistrationRepository;
 
-  private readonly registrationRepository: CardRegistrationRepository;
+  private readonly salonRepository: SalonRepository;
+
+  private readonly salonRegistrationRepository: SalonRegistrationRepository
 
   constructor (
-    profileFetcher: FbProfileFetcher,
-    registrationRepository: CardRegistrationRepository,
     cardRepository: CardRepository,
+    cardRegistrationRepository: CardRegistrationRepository,
+    salonRepository: SalonRepository,
+    salonRegistrationRepository: SalonRegistrationRepository,
     barcodeParser: BarcodeParser
   ) {
-    this.profileFetcher = profileFetcher
     this.cardRepository = cardRepository
-    this.registrationRepository = registrationRepository
+    this.cardRegistrationRepository = cardRegistrationRepository
+    this.salonRepository = salonRepository
+    this.salonRegistrationRepository = salonRegistrationRepository
     this.barcodeParser = barcodeParser
   }
 
   assistantFor (
     cid: CustomerId, callback: InteractionCallback
   ): Promise<BzzCustomerAssistant> {
-    return this.registrationRepository.findFull(cid.toRepresentation())
+    return this.cardRegistrationRepository.findFull(cid.toRepresentation())
       .then(Optional.ofNullable)
       .then(
         (registration) => {
           if (registration.isPresent()) {
-            return Promise.resolve(
-              new BzzActiveCustomerAssistant(registration.get(), callback)
-            )
+            return new BzzActiveCustomerAssistant(registration.get(), callback)
           }
-          return this.profileFetcher.fetch(cid.toRepresentation())
-            .then(
-              (profile) => new BzzInactiveCustomerAssistant(
-                this.registrationRepository,
-                this.cardRepository,
-                this.barcodeParser,
-                profile.map((fetched) => BzzCustomerCare.toCustomerInfo(cid, fetched))
-                  .orElseGet(() => BzzCustomerCare.toUnknownCustomerInfo(cid)),
-                callback
-              )
-            )
+          return new BzzInactiveCustomerAssistant(
+            cid,
+            this.cardRepository,
+            this.cardRegistrationRepository,
+            this.salonRepository,
+            this.salonRegistrationRepository,
+            this.barcodeParser,
+            callback
+          )
         }
       )
-  }
-
-  private static toCustomerInfo (
-    cid: CustomerId, profile: FbProfile
-  ): CustomerExternalInfo {
-    return new CustomerExternalInfo(
-      cid,
-      profile.firstName,
-      profile.lastName,
-      Gender.discover(profile.firstName),
-      Optional.ofNullable(profile.pictureUrl).map((url) => new ImageUrl(url))
-    )
-  }
-
-  private static toUnknownCustomerInfo (cid: CustomerId): CustomerExternalInfo {
-    return new CustomerExternalInfo(
-      cid, '', '', Gender.FEMALE, Optional.empty()
-    )
   }
 }
 

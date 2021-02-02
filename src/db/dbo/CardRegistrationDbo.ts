@@ -2,6 +2,7 @@ import {
   Column, Entity, JoinColumn, OneToOne, PrimaryColumn
 } from 'typeorm'
 import CardDbo from './CardDbo'
+import IdentificationDbo from './IdentificationDbo'
 
 @Entity()
 class CardRegistrationDbo {
@@ -15,6 +16,13 @@ class CardRegistrationDbo {
   )
   @JoinColumn()
   card: CardDbo;
+
+  @OneToOne(
+    () => IdentificationDbo,
+    (identification) => identification.registration,
+    { nullable: true }
+  )
+  identification: IdentificationDbo;
 
   @Column('text')
   manualAnnotation: string;

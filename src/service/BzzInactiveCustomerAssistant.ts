@@ -6,11 +6,14 @@ import BarcodeParser from './BarcodeParser'
 import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
 import StaticImageUrls from './StaticImageUrls'
-import CustomerExternalInfo from './CustomerExternalInfo'
 import CardRepository from '../db/repo/CardRepository'
 import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
 import CardDbo from '../db/dbo/CardDbo'
 import BzzActiveCustomerAssistant from './BzzActiveCustomerAssistant'
+import CustomerId from './domain/CustomerId'
+import SalonRepository from '../db/repo/SalonRepository'
+import SalonRegistrationRepository from '../db/repo/SalonRegistrationRepository'
+import SalonRegistrationDbo from '../db/dbo/SalonRegistrationDbo'
 
 class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
   private static ACTIVATE: any = {
@@ -18,61 +21,41 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
     action: 'ACTIVATE'
   }
 
-  private readonly registrationRepository: CardRegistrationRepository;
+  private readonly cid: CustomerId;
+
+  private readonly cardRegistrationRepository: CardRegistrationRepository;
 
   private readonly cardRepository: CardRepository;
 
-  private readonly barcodeParser: BarcodeParser;
+  private readonly salonRepository: SalonRepository;
 
-  private readonly customerInfo: CustomerExternalInfo;
+  private readonly salonRegistrationRepository: SalonRegistrationRepository
+
+  private readonly barcodeParser: BarcodeParser;
 
   private readonly callback: InteractionCallback;
 
   constructor (
-    registrationRepository: CardRegistrationRepository,
+    cid: CustomerId,
     cardRepository: CardRepository,
+    cardRegistrationRepository: CardRegistrationRepository,
+    salonRepository: SalonRepository,
+    salonRegistrationRepository: SalonRegistrationRepository,
     barcodeParser: BarcodeParser,
-    customerInfo: CustomerExternalInfo,
     callback: InteractionCallback
   ) {
-    this.registrationRepository = registrationRepository
+    this.cid = cid
     this.cardRepository = cardRepository
+    this.cardRegistrationRepository = cardRegistrationRepository
+    this.salonRepository = salonRepository
+    this.salonRegistrationRepository = salonRegistrationRepository
     this.barcodeParser = barcodeParser
-    this.customerInfo = customerInfo
     this.callback = callback
   }
 
   onText (text: string): void {
-    if (text === '!me') {
-      const info: string = `${this.customerInfo.firstName} ${this.customerInfo.lastName} (${this.customerInfo.id})`
-      this.customerInfo.picture.ifPresentOrElse(
-        (picture) => this.callback.sendImage(picture, info),
-        () => this.callback.sendText(info)
-      )
-      return
-    }
-    if (text.startsWith('!spr')) {
-      const cardNumber: Optional<number> = BzzInactiveCustomerAssistant.extractNumber(text)
-      if (cardNumber.isPresent()) {
-        this.cardRepository.findFull(cardNumber.get())
-          .then(Optional.ofNullable)
-          .then(
-            (optionalCard) => {
-              if (optionalCard.isPresent()) {
-                const reg: Optional<CardRegistrationDbo> = Optional.ofNullable(optionalCard.get().registration)
-                if (reg.isPresent()) {
-                  this.callback.sendText(`Ma za darmo 1:1, laminację i hennę rzęs, wszystko na brwi oraz depilację twarzy woskiem (płaci za nią firma ${optionalCard.get().agreement.employerName}).`)
-                } else {
-                  this.callback.sendText('Karta nie została aktywowana! (Klientka musi zagadać do tego samego bota)')
-                }
-              } else {
-                this.callback.sendText('Błędny numer karty!')
-              }
-            }
-          )
-      } else {
-        this.callback.sendText('Podaj numer karty, np. "!spr 141520103')
-      }
+    if (text.startsWith('!')) {
+      this.handleBang(text.substring(1))
       return
     }
     const cardNumber: Optional<number> = BzzInactiveCustomerAssistant.extractNumber(text)
@@ -83,8 +66,8 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
     this.callback.sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
-        title: `Hej, ${this.customerInfo.shorthand()}!`,
-        subtitle: Optional.of(`Czym jesteś zainteresowan${this.customerInfo.gender.mSuffix}?`),
+        title: 'Hej, nieznajoma!',
+        subtitle: Optional.of('Czym jesteś zainteresowana?'),
         buttons: [
           {
             text: 'Aktywuj kartę!',
@@ -190,17 +173,91 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
   private register (card: CardDbo): Promise<boolean> {
     const registration: CardRegistrationDbo = new CardRegistrationDbo()
     registration.card = card
-    registration.customerId = this.customerInfo.id.toRepresentation()
+    registration.customerId = this.cid.toRepresentation()
     registration.manualAnnotation = 'Pierwsze testowe, ufać bez identyfikacji!'
-    return this.registrationRepository.save(registration)
+    return this.cardRegistrationRepository.save(registration)
       .then(() => true)
       .catch(
         (error) => {
-          console.error(`while registering ${card.cardNumber} to ${this.customerInfo.id}`)
+          console.error(`while registering ${card.cardNumber} to ${this.cid}`)
           console.error(error)
           return false
         }
       )
+  }
+
+  private handleBang (content: string): void {
+    const parts: Array<string> = content.split(' ')
+      .filter((part) => part.length > 0)
+    if (parts.length === 0) {
+      return
+    }
+    const verb: string = parts[0]
+    if (verb === 'me') {
+      this.callback.sendText(this.cid.toString())
+      return
+    }
+    if (verb === 'salon') {
+      if (parts.length !== 3) {
+        this.callback.sendText('Podaj nazwę salonu i hasło, np. "!salon powerbrows qwe123".')
+        return
+      }
+      const salonName: string = parts[1]
+      this.salonRepository.createQueryBuilder('salon')
+        .where('salon.salonName = :salonName')
+        .setParameters({ salonName })
+        .getOne()
+        .then(Optional.ofNullable)
+        .then(
+          (salon) => {
+            if (!salon.isPresent()) {
+              this.callback.sendText(`Nie znam salonu "${salonName}".`)
+              return
+            }
+            const salonSecret: string = parts[2]
+            if (salon.get().salonSecret !== salonSecret) {
+              this.callback.sendText(`Niestety, "${salonSecret}" to nie jest poprawne hasło salonu "${salonName}".`)
+              return
+            }
+            const registration: SalonRegistrationDbo = new SalonRegistrationDbo()
+            registration.salon = salon.get()
+            registration.customerId = this.cid.toRepresentation()
+            this.salonRegistrationRepository.save(registration)
+              .then(() => true)
+              .catch(
+                (error) => {
+                  console.error(`while registering ${salon.get().salonName} to ${this.cid}`)
+                  console.error(error)
+                  return false
+                }
+              )
+          }
+        )
+      return
+    }
+    if (verb === 'spr') {
+      const cardNumber: Optional<number> = BzzInactiveCustomerAssistant.extractNumber(content)
+      if (!cardNumber.isPresent()) {
+        this.callback.sendText('Podaj numer karty, np. "!spr 141520103".')
+        return
+      }
+      this.cardRepository.findFull(cardNumber.get())
+        .then(Optional.ofNullable)
+        .then(
+          (optionalCard) => {
+            if (optionalCard.isPresent()) {
+              const reg: Optional<CardRegistrationDbo> = Optional.ofNullable(optionalCard.get().registration)
+              if (reg.isPresent()) {
+                this.callback.sendText(`Ma za darmo 1:1, laminację i hennę rzęs, wszystko na brwi oraz depilację twarzy woskiem (płaci za nią firma ${optionalCard.get().agreement.employerName}).`)
+              } else {
+                this.callback.sendText('Karta nie została aktywowana! (Klientka musi zagadać do tego samego bota)')
+              }
+            } else {
+              this.callback.sendText('Błędny numer karty!')
+            }
+          }
+        )
+    }
   }
 }
 
