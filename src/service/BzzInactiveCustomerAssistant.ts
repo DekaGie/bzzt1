@@ -223,12 +223,14 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
             registration.salon = salon.get()
             registration.customerId = this.cid.toRepresentation()
             this.salonRegistrationRepository.save(registration)
-              .then(() => true)
-              .catch(
+              .then(
+                () => {
+                  this.callback.sendText('Twoje konto od teraz powiązane jest z salonem i służy do skanowania kart klientek.')
+                },
                 (error) => {
                   console.error(`while registering ${salon.get().salonName} to ${this.cid}`)
                   console.error(error)
-                  return false
+                  this.callback.sendText('Niestety wystąpił błąd. Spróbuj później.')
                 }
               )
           }
