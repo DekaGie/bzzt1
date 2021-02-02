@@ -96,7 +96,6 @@ class Decoder39 {
       }
       cumulative += probability
     }
-    console.warn(`not found after ${new Date().getTime() - started} ms`)
     return Optional.empty()
   }
 

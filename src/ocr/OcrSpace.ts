@@ -33,7 +33,7 @@ class OcrSpace {
       .then(
         (response) => {
           if (response.status !== 200) {
-            console.error(`non-successful OCR response for ${imageUrl}:`)
+            console.error(`while expecting successful OCR response for ${imageUrl}:`)
             console.error(response)
             return []
           }

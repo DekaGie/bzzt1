@@ -6,6 +6,8 @@ interface Config {
   accessToken: string
 
   ocrSpaceApiKey: string
+
+  postgresUrl: string;
 }
 
 export default Config
