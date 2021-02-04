@@ -89,9 +89,7 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
         topImage: Optional.of(StaticImageUrls.POWER_BANNER),
         title: 'Power Brows',
         subtitle: Optional.of(
-          '- Wszystko dla brwi\n'
-              + '- Rzęsy: laminacja i henna\n'
-              + '- Depilacja twarzy woskiem'
+          'Brwi: wszystko. Rzęsy: Laminacja, Henna.'
         ),
         buttons: [
           {
@@ -108,8 +106,7 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
         topImage: Optional.of(StaticImageUrls.GINGER_BANNER),
         title: 'Ginger Zone',
         subtitle: Optional.of(
-          '- Rzęsy: przedłużanie 1:1, laminacja i henna\n'
-              + '- Wszystko dla brwi'
+          'Rzęsy: Przedłużanie 1:1, Laminacja, Henna. Brwi: wszystko.'
         ),
         buttons: [
           {
@@ -131,9 +128,7 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
         topImage: Optional.of(StaticImageUrls.BROWS),
         title: 'Brwi',
         subtitle: Optional.of(
-          '- Regulacja, Laminacja\n'
-              + '- Henna (pudrowa lub żelowa)\n'
-              + '- Depilacja twarzy woskiem'
+          'Regulacja, Laminacja, Henna, Depilacja twarzy woskiem.'
         ),
         buttons: []
       },
@@ -141,9 +136,7 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
         topImage: Optional.of(StaticImageUrls.LASHES),
         title: 'Rzęsy',
         subtitle: Optional.of(
-          '- Laminacja (lifting)\n'
-            + '- Henna\n'
-            + '- Przedłużanie 1:1'
+          'Laminacja, Henna, Przedłużanie 1:1.'
         ),
         buttons: []
       }

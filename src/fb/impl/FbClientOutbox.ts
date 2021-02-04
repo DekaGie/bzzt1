@@ -63,7 +63,7 @@ class FbClientOutbox implements FbMessengerOutbox {
       image_url: Optional.ofNullable(generic.topImage)
         .map((top) => top.url)
         .orElse(null),
-      buttons: generic.buttons.map(
+      buttons: generic.buttons.length === 0 ? null : generic.buttons.map(
         (button) => {
           if ('postback' in button) {
             return {
