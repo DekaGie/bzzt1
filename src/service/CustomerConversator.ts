@@ -34,7 +34,13 @@ class CustomerConversator {
   }
 
   toString (): string {
-    return `${this.customerId.toRepresentation()} - ${JSON.stringify([...this.stateStore.allOf(this.customerId)])}`
+    const object: Object = {}
+    this.stateStore.allOf(this.customerId).forEach(
+      (value, categoryId) => {
+        object[categoryId.toRepresentation()] = value
+      }
+    )
+    return `${this.customerId.toRepresentation()} - ${JSON.stringify(object)}`
   }
 
   clearState (): void {

@@ -103,7 +103,7 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
     } else {
       this.conversator.callback().sendOptions(
         {
-          topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
+          topImage: Optional.empty(),
           title: 'Ooo, to karta Beauty Zazero!',
           subtitle: Optional.of('Chcesz ją aktywować?'),
           buttons: [
