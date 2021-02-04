@@ -1,10 +1,10 @@
 import { isDeepStrictEqual } from 'util'
 import { Optional } from 'typescript-optional'
-import InteractionCallback from './spi/InteractionCallback'
 import ImageUrl from './domain/ImageUrl'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
 import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
 import StaticImageUrls from './StaticImageUrls'
+import CustomerConversator from './CustomerConversator'
 
 class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
   static SHOW_PARTNERS: any = {
@@ -12,17 +12,17 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
     action: 'SHOW_PARTNERS'
   }
 
+  private readonly conversator: CustomerConversator;
+
   private readonly registration: CardRegistrationDbo;
 
-  private readonly callback: InteractionCallback;
-
-  constructor (registration: CardRegistrationDbo, callback: InteractionCallback) {
+  constructor (conversator: CustomerConversator, registration: CardRegistrationDbo) {
+    this.conversator = conversator
     this.registration = registration
-    this.callback = callback
   }
 
   onText (text: string): void {
-    this.callback.sendOptions(
+    this.conversator.callback().sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
         title: 'Witaj ponownie!',
@@ -42,20 +42,22 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
   }
 
   onImage (url: ImageUrl): void {
-    this.callback.sendText(`Dzięki, ale Twoja karta ${this.registration.card.cardNumber} (od ${this.registration.card.agreement.employerName}) jest już aktywna, więc nie potrzebuję od Ciebie więcej zdjęć :)`)
+    this.conversator.callback().sendText(
+      `Dzięki, ale Twoja karta ${this.registration.card.cardNumber} (od ${this.registration.card.agreement.employerName}) jest już aktywna, więc nie potrzebuję od Ciebie więcej zdjęć :)`
+    )
   }
 
   onCommand (command: any): void {
     if (!isDeepStrictEqual(command, BzzActiveCustomerAssistant.SHOW_PARTNERS)) {
       console.error(`received unexpected command: ${JSON.stringify(command)}`)
-      this.callback.sendText('Przepraszam, nie zrozumiałem Cię.')
+      this.conversator.callback().sendText('Przepraszam, nie zrozumiałem Cię.')
       return
     }
     this.showPartners()
   }
 
   private showPartners (): void {
-    this.callback.sendOptions(
+    this.conversator.callback().sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.POWER_BANNER),
         title: 'Power Brows',
@@ -76,7 +78,7 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
         ]
       }
     )
-    this.callback.sendOptions(
+    this.conversator.callback().sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.GINGER_BANNER),
         title: 'Ginger Zone',

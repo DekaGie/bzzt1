@@ -8,6 +8,8 @@ import CustomerId from './domain/CustomerId'
 import FbMessengerBot from '../fb/FbMessengerBot'
 import ErrorCustomerAssistant from './ErrorCustomerAssistant'
 import OptionsInteraction from './spi/OptionsInteraction'
+import CustomerConversator from './CustomerConversator'
+import StateStore from './StateStore'
 
 class LocalInteractionCallback implements InteractionCallback {
   private readonly outbox: FbMessengerOutbox;
@@ -67,8 +69,11 @@ class LocalInteractionCallback implements InteractionCallback {
 class BzzBot implements FbMessengerBot {
   private readonly customerCare: BzzCustomerCare
 
-  constructor (customerCare: BzzCustomerCare) {
+  private readonly stateStore: StateStore;
+
+  constructor (customerCare: BzzCustomerCare, stateStore: StateStore) {
     this.customerCare = customerCare
+    this.stateStore = stateStore
   }
 
   onText (psid: string, text: string, outbox: FbMessengerOutbox): void {
@@ -92,13 +97,17 @@ class BzzBot implements FbMessengerBot {
   private getAssistant (
     psid: string, outbox: FbMessengerOutbox
   ): Promise<BzzCustomerAssistant> {
-    const callback: InteractionCallback = new LocalInteractionCallback(outbox, psid)
-    return this.customerCare.assistantFor(new CustomerId(psid), callback)
+    const conversator: CustomerConversator = new CustomerConversator(
+      new CustomerId(psid),
+      this.stateStore,
+      new LocalInteractionCallback(outbox, psid)
+    )
+    return this.customerCare.assistantFor(conversator)
       .catch(
         (error) => {
           console.error(`while getting assistant for ${psid}`)
           console.error(error)
-          return new ErrorCustomerAssistant(callback)
+          return new ErrorCustomerAssistant(conversator)
         }
       )
   }

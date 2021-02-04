@@ -1,15 +1,16 @@
 import { Optional } from 'typescript-optional'
-import CustomerId from './domain/CustomerId'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
-import InteractionCallback from './spi/InteractionCallback'
 import BarcodeParser from './BarcodeParser'
 import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import BzzInactiveCustomerAssistant from './BzzInactiveCustomerAssistant'
 import BzzActiveCustomerAssistant from './BzzActiveCustomerAssistant'
 import CardRepository from '../db/repo/CardRepository'
 import SalonRepository from '../db/repo/SalonRepository'
-import SalonRegistrationRepository
-  from '../db/repo/SalonRegistrationRepository'
+import SalonRegistrationRepository from '../db/repo/SalonRegistrationRepository'
+import BangAssistantDelegate from './BangAssistantDelegate'
+import CardRegistrator from './CardRegistrator'
+import SalonRegistrator from './SalonRegistrator'
+import CustomerConversator from './CustomerConversator'
 
 class BzzCustomerCare {
   private readonly barcodeParser: BarcodeParser
@@ -36,24 +37,26 @@ class BzzCustomerCare {
     this.barcodeParser = barcodeParser
   }
 
-  assistantFor (
-    cid: CustomerId, callback: InteractionCallback
-  ): Promise<BzzCustomerAssistant> {
-    return this.cardRegistrationRepository.findFull(cid.toRepresentation())
+  assistantFor (conversator: CustomerConversator): Promise<BzzCustomerAssistant> {
+    return this.cardRegistrationRepository.findFull(conversator.id().toRepresentation())
       .then(Optional.ofNullable)
       .then(
         (registration) => {
           if (registration.isPresent()) {
-            return new BzzActiveCustomerAssistant(registration.get(), callback)
+            return new BzzActiveCustomerAssistant(conversator, registration.get())
           }
           return new BzzInactiveCustomerAssistant(
-            cid,
-            this.cardRepository,
-            this.cardRegistrationRepository,
-            this.salonRepository,
-            this.salonRegistrationRepository,
+            conversator,
+            new BangAssistantDelegate(
+              conversator,
+              new SalonRegistrator(
+                this.salonRepository, this.salonRegistrationRepository
+              )
+            ),
             this.barcodeParser,
-            callback
+            new CardRegistrator(
+              this.cardRepository, this.cardRegistrationRepository
+            )
           )
         }
       )

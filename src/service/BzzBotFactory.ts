@@ -10,6 +10,7 @@ import CardRepository from '../db/repo/CardRepository'
 import SalonRepository from '../db/repo/SalonRepository'
 import SalonRegistrationRepository
   from '../db/repo/SalonRegistrationRepository'
+import StateStore from './StateStore'
 
 class BzzBotFactory {
   static create (config: Config, locator: ServiceLocator) {
@@ -20,7 +21,8 @@ class BzzBotFactory {
         locator.db.refer().getCustomRepository(SalonRepository),
         locator.db.refer().getCustomRepository(SalonRegistrationRepository),
         new BarcodeParser(new Decoder39(), new OcrSpace(config.ocrSpaceApiKey))
-      )
+      ),
+      new StateStore()
     )
   }
 }
