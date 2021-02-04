@@ -78,19 +78,40 @@ class BzzBot implements FbMessengerBot {
 
   onText (psid: string, text: string, outbox: FbMessengerOutbox): void {
     this.getAssistant(psid, outbox).then(
-      (assistant) => assistant.onText(text)
+      (assistant) => {
+        try {
+          assistant.onText(text)
+        } catch (error) {
+          console.error(`while ${psid} was handling text: ${text}`)
+          console.error(error)
+        }
+      }
     )
   }
 
   onImage (psid: string, url: string, outbox: FbMessengerOutbox): void {
     this.getAssistant(psid, outbox).then(
-      (assistant) => assistant.onImage(new ImageUrl(url))
+      (assistant) => {
+        try {
+          assistant.onImage(new ImageUrl(url))
+        } catch (error) {
+          console.error(`while ${psid} was handling image: ${url}`)
+          console.error(error)
+        }
+      }
     )
   }
 
-  onPostback (psid: string, payload: string, outbox: FbMessengerOutbox) {
+  onPostback (psid: string, payload: string, outbox: FbMessengerOutbox): void {
     this.getAssistant(psid, outbox).then(
-      (assistant) => assistant.onCommand(JSON.parse(payload))
+      (assistant) => {
+        try {
+          assistant.onCommand(JSON.parse(payload))
+        } catch (error) {
+          console.error(`while ${psid} was executing command: ${payload}`)
+          console.error(error)
+        }
+      }
     )
   }
 

@@ -61,7 +61,6 @@ class CardRegistrator {
     const registration: CardRegistrationDbo = new CardRegistrationDbo()
     registration.card = card
     registration.customerId = conversator.id().toRepresentation()
-    registration.manualAnnotation = 'Pierwsze testowe, ufać bez identyfikacji!'
     this.cardRegistrationRepository.save(registration)
       .then(
         () => {
