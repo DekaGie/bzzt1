@@ -24,7 +24,13 @@ class CardRegistrationDbo {
   )
   identification: IdentificationDbo;
 
-  @Column('text')
+  @Column(
+    {
+      type: 'text',
+      nullable: false,
+      default: ''
+    }
+  )
   manualAnnotation: string;
 }
 

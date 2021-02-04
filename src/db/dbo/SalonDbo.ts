@@ -7,6 +7,15 @@ class SalonDbo {
 
   @Column({ type: 'text', nullable: false })
   salonSecret: string;
+
+  @Column(
+    {
+      type: 'text',
+      nullable: false,
+      default: ''
+    }
+  )
+  manualAnnotation: string;
 }
 
 export default SalonDbo

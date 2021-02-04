@@ -90,7 +90,7 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
           )
           return
         }
-        this.cardRegistrator.validateAndRegister(this.conversator, cardNumber.get())
+        this.onCardNumber(cardNumber.get())
       }
     )
   }

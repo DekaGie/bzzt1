@@ -22,7 +22,11 @@ class BangAssistantDelegate {
     }
     const verb: string = parts[0]
     if (verb === 'me') {
-      this.conversator.callback().sendText(this.conversator.id().toString())
+      this.conversator.callback().sendText(this.conversator.toString())
+      return
+    }
+    if (verb === 'clearstate') {
+      this.conversator.clearState()
       return
     }
     if (verb === 'salon') {

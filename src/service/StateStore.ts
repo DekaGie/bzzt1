@@ -23,6 +23,19 @@ class StateStore {
       }
     )
   }
+
+  allOf (customerId: CustomerId): Map<StateCategoryId, any> {
+    const result: Map<StateCategoryId, any> = new Map()
+    const prefix: string = customerId.toRepresentation() + StateStore.SEPARATOR
+    this.memory.forEach(
+      (value, key) => {
+        if (key.startsWith(prefix) && value.isSet()) {
+          result.set(new StateCategoryId(key.substring(prefix.length)), value.get())
+        }
+      }
+    )
+    return result
+  }
 }
 
 export default StateStore

@@ -32,6 +32,16 @@ class CustomerConversator {
   callback (): InteractionCallback {
     return this.interaction
   }
+
+  toString (): string {
+    return `${this.customerId.toRepresentation()} - ${JSON.stringify([...this.stateStore.allOf(this.customerId)])}`
+  }
+
+  clearState (): void {
+    this.stateStore.allOf(this.customerId).forEach(
+      (value, categoryId) => this.stateStore.get(this.customerId, categoryId).clear()
+    )
+  }
 }
 
 export default CustomerConversator
