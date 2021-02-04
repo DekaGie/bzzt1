@@ -78,7 +78,9 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
     }
     if (command.action === 'ACTIVATE') {
       this.cardRegistrator.validateAndRegister(this.conversator, command.cardNumber)
+      return
     }
+    console.error(`Got unexpected command: ${JSON.stringify(command)}`)
   }
 
   onImage (url: ImageUrl): void {

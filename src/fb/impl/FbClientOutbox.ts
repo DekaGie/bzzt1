@@ -19,7 +19,19 @@ class FbClientOutbox implements FbMessengerOutbox {
     )
   }
 
-  sendGenericTemplate (psid: string, generic: FbGenericTemplate): void {
+  sendGenericTemplate (psid: string, generics: Array<FbGenericTemplate>): void {
+    if (generics.length === 0) {
+      return
+    }
+    const squareRatio: Set<boolean> = new Set(
+      generics.map(
+        (generic) => Optional.ofNullable(generic.topImage)
+          .map((top) => top.squareRatio === true).orElse(false)
+      )
+    )
+    if (squareRatio.size > 1) {
+      throw new Error('cannot send generic templates of different ratios')
+    }
     this.send(
       psid,
       {
@@ -27,42 +39,8 @@ class FbClientOutbox implements FbMessengerOutbox {
           type: 'template',
           payload: {
             template_type: 'generic',
-            image_aspect_ratio: Optional.ofNullable(generic.topImage)
-              .map((top) => top.squareRatio === true)
-              .orElse(false)
-              ? 'square' : 'horizontal',
-            elements: [
-              {
-                title: generic.title,
-                subtitle: generic.subtitle,
-                image_url: Optional.ofNullable(generic.topImage)
-                  .map((top) => top.url)
-                  .orElse(null),
-                buttons: generic.buttons.map(
-                  (button) => {
-                    if ('postback' in button) {
-                      return {
-                        type: 'postback',
-                        title: button.text,
-                        payload: button.postback
-                      }
-                    }
-                    if ('url' in button) {
-                      return {
-                        type: 'web_url',
-                        title: button.text,
-                        url: button.url
-                      }
-                    }
-                    return {
-                      type: 'phone_number',
-                      title: button.text,
-                      payload: button.phoneNumber
-                    }
-                  }
-                )
-              }
-            ]
+            image_aspect_ratio: squareRatio.has(true) ? 'square' : 'horizontal',
+            elements: generics.map((generic) => FbClientOutbox.toElement(generic))
           }
         }
       }
@@ -76,6 +54,39 @@ class FbClientOutbox implements FbMessengerOutbox {
         console.error(error)
       }
     )
+  }
+
+  private static toElement (generic: FbGenericTemplate): object {
+    return {
+      title: generic.title,
+      subtitle: generic.subtitle,
+      image_url: Optional.ofNullable(generic.topImage)
+        .map((top) => top.url)
+        .orElse(null),
+      buttons: generic.buttons.map(
+        (button) => {
+          if ('postback' in button) {
+            return {
+              type: 'postback',
+              title: button.text,
+              payload: button.postback
+            }
+          }
+          if ('url' in button) {
+            return {
+              type: 'web_url',
+              title: button.text,
+              url: button.url
+            }
+          }
+          return {
+            type: 'phone_number',
+            title: button.text,
+            payload: button.phoneNumber
+          }
+        }
+      )
+    }
   }
 }
 

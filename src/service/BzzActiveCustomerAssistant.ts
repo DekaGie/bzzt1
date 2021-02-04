@@ -1,4 +1,3 @@
-import { isDeepStrictEqual } from 'util'
 import { Optional } from 'typescript-optional'
 import ImageUrl from './domain/ImageUrl'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
@@ -7,11 +6,6 @@ import StaticImageUrls from './StaticImageUrls'
 import CustomerConversator from './CustomerConversator'
 
 class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
-  static SHOW_PARTNERS: any = {
-    type: 'ACTIVE_CUSTOMER_ACTION',
-    action: 'SHOW_PARTNERS'
-  }
-
   private readonly conversator: CustomerConversator;
 
   private readonly registration: CardRegistrationDbo;
@@ -30,7 +24,17 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
         buttons: [
           {
             text: 'Salony partnerskie',
-            command: BzzActiveCustomerAssistant.SHOW_PARTNERS
+            command: {
+              type: 'ACTIVE_CUSTOMER_ACTION',
+              action: 'SHOW_PARTNERS'
+            }
+          },
+          {
+            text: 'Aktywne usługi',
+            command: {
+              type: 'ACTIVE_CUSTOMER_ACTION',
+              action: 'SHOW_SUBSCRIPTIONS'
+            }
           },
           {
             text: 'Obsługa klienta',
@@ -48,12 +52,35 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
   }
 
   onCommand (command: any): void {
-    if (!isDeepStrictEqual(command, BzzActiveCustomerAssistant.SHOW_PARTNERS)) {
-      console.error(`received unexpected command: ${JSON.stringify(command)}`)
-      this.conversator.callback().sendText('Przepraszam, nie zrozumiałem Cię.')
+    if (command.type !== 'ACTIVE_CUSTOMER_ACTION') {
       return
     }
-    this.showPartners()
+    if (command.action === 'SHOW_PARTNERS') {
+      this.showPartners()
+      return
+    }
+    if (command.action === 'SHOW_SUBSCRIPTIONS') {
+      this.showSubscriptions()
+      return
+    }
+    if (command.action === 'SHOW_TUTORIAL') {
+      this.showTutorial()
+      return
+    }
+    console.error(`Got unexpected command: ${JSON.stringify(command)}`)
+  }
+
+  private showTutorial (): void {
+    this.conversator.callback().sendImage(
+      StaticImageUrls.ACCEPTED_SIGN,
+      'Szukaj tego szyldu!'
+    )
+    this.conversator.callback().sendText(
+      'Zapytaj mnie o aktywne na Twojej karcie usługi.\n'
+        + 'Następnie spytaj o salony, które akceptują kartę.\n'
+        + 'Umów się na wizytę w dowolny sposób - nie musisz nawet wspominać o karcie. '
+        + 'Po prostu przy płatności wyciągnij ją zamiast karty płatniczej :)'
+    )
   }
 
   private showPartners (): void {
@@ -76,9 +103,7 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
             phoneNumber: '+48736842624'
           }
         ]
-      }
-    )
-    this.conversator.callback().sendOptions(
+      },
       {
         topImage: Optional.of(StaticImageUrls.GINGER_BANNER),
         title: 'Ginger Zone',
@@ -96,6 +121,31 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
             phoneNumber: '+48691120992'
           }
         ]
+      }
+    )
+  }
+
+  private showSubscriptions (): void {
+    this.conversator.callback().sendOptions(
+      {
+        topImage: Optional.of(StaticImageUrls.BROWS),
+        title: 'Brwi',
+        subtitle: Optional.of(
+          '- Regulacja, Laminacja\n'
+              + '- Henna (pudrowa lub żelowa)\n'
+              + '- Depilacja twarzy woskiem'
+        ),
+        buttons: []
+      },
+      {
+        topImage: Optional.of(StaticImageUrls.LASHES),
+        title: 'Rzęsy',
+        subtitle: Optional.of(
+          '- Laminacja (lifting)\n'
+            + '- Henna\n'
+            + '- Przedłużanie 1:1'
+        ),
+        buttons: []
       }
     )
   }

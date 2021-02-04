@@ -3,9 +3,9 @@ import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import CardRepository from '../db/repo/CardRepository'
 import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
 import CardDbo from '../db/dbo/CardDbo'
-import BzzActiveCustomerAssistant from './BzzActiveCustomerAssistant'
 import Instant from './domain/Instant'
 import CustomerConversator from './CustomerConversator'
+import StaticImageUrls from './StaticImageUrls'
 
 class CardRegistrator {
   private readonly cardRegistrationRepository: CardRegistrationRepository;
@@ -64,7 +64,7 @@ class CardRegistrator {
     this.cardRegistrationRepository.save(registration)
       .then(
         () => {
-          this.promptActive(conversator, card)
+          CardRegistrator.promptActive(conversator, card)
         }
       )
       .catch(
@@ -79,18 +79,35 @@ class CardRegistrator {
       )
   }
 
-  private promptActive (conversator: CustomerConversator, card: CardDbo): void {
+  private static promptActive (conversator: CustomerConversator, card: CardDbo): void {
     conversator.callback().sendOptions(
       {
-        topImage: Optional.empty(),
+        topImage: Optional.of(StaticImageUrls.WELCOME),
         title: `Karta od ${card.agreement.employerName} aktywowana!`,
         subtitle: Optional.of(
-          'Chcesz wiedzieć gdzie jej użyć?'
+          'Pewnie chcesz wiedzieć co dalej?'
         ),
         buttons: [
           {
-            command: BzzActiveCustomerAssistant.SHOW_PARTNERS,
-            text: 'Tak!'
+            command: {
+              type: 'ACTIVE_CUSTOMER_ACTION',
+              action: 'SHOW_TUTORIAL'
+            },
+            text: 'Jak użyć karty?'
+          },
+          {
+            command: {
+              type: 'ACTIVE_CUSTOMER_ACTION',
+              action: 'SHOW_SUBSCRIPTIONS'
+            },
+            text: 'Do jakich usług?'
+          },
+          {
+            command: {
+              type: 'ACTIVE_CUSTOMER_ACTION',
+              action: 'SHOW_PARTNERS'
+            },
+            text: 'W których salonach?'
           }
         ]
       }

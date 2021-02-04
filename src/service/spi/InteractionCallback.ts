@@ -7,7 +7,7 @@ interface InteractionCallback {
 
   sendImage (url: ImageUrl, caption: string): void;
 
-  sendOptions(interaction: OptionsInteraction): void;
+  sendOptions(...interactions: Array<OptionsInteraction>): void;
 }
 
 export default InteractionCallback

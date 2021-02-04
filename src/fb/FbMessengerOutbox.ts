@@ -4,7 +4,7 @@ interface FbMessengerOutbox {
 
   sendText (psid: string, text: string): void
 
-  sendGenericTemplate (psid: string, generic: FbGenericTemplate): void;
+  sendGenericTemplate (psid: string, generics: Array<FbGenericTemplate>): void;
 }
 
 export default FbMessengerOutbox

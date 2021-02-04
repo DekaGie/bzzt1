@@ -28,40 +28,46 @@ class LocalInteractionCallback implements InteractionCallback {
   sendImage (url: ImageUrl, caption: string): void {
     this.outbox.sendGenericTemplate(
       this.psid,
-      {
-        topImage: {
-          url: url.asString(),
-          squareRatio: true
-        },
-        title: caption,
-        buttons: []
-      }
+      [
+        {
+          topImage: {
+            url: url.asString(),
+            squareRatio: true
+          },
+          title: caption,
+          buttons: []
+        }
+      ]
     )
   }
 
-  sendOptions (interaction: OptionsInteraction): void {
+  sendOptions (...interactions: Array<OptionsInteraction>): void {
     this.outbox.sendGenericTemplate(
       this.psid,
-      {
-        topImage: interaction.topImage.map(
-          (imageUrl) => ({
-            url: imageUrl.asString(),
-            squareRatio: false
-          })
-        ).orNull(),
-        title: interaction.title,
-        subtitle: interaction.subtitle.orNull(),
-        buttons: interaction.buttons.map(
-          (button) => (
-            'command' in button
-              ? {
-                text: button.text,
-                postback: JSON.stringify(button.command)
-              }
-              : button
-          )
+      interactions.map(
+        (interaction) => (
+          {
+            topImage: interaction.topImage.map(
+              (imageUrl) => ({
+                url: imageUrl.asString(),
+                squareRatio: false
+              })
+            ).orNull(),
+            title: interaction.title,
+            subtitle: interaction.subtitle.orNull(),
+            buttons: interaction.buttons.map(
+              (button) => (
+                'command' in button
+                  ? {
+                    text: button.text,
+                    postback: JSON.stringify(button.command)
+                  }
+                  : button
+              )
+            )
+          }
         )
-      }
+      )
     )
   }
 }
