@@ -5,7 +5,7 @@ class ImageUrl {
     this.url = url
   }
 
-  asString () {
+  asString (): string {
     return this.url
   }
 }

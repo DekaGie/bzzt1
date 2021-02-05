@@ -1,12 +1,12 @@
-import InteractionCallback from './spi/InteractionCallback'
 import ImageUrl from './domain/ImageUrl'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
+import CustomerConversator from './CustomerConversator'
 
 class ErrorCustomerAssistant implements BzzCustomerAssistant {
-  private readonly callback: InteractionCallback;
+  private readonly conversator: CustomerConversator;
 
-  constructor (callback: InteractionCallback) {
-    this.callback = callback
+  constructor (conversator: CustomerConversator) {
+    this.conversator = conversator
   }
 
   onText (text: string): void {
@@ -22,8 +22,10 @@ class ErrorCustomerAssistant implements BzzCustomerAssistant {
   }
 
   private onError () {
-    this.callback.sendText('Przepraszam, ale wystąpił błąd po stronie systemu Beauty Zazero.\n'
-        + 'Skontaktuje się z Tobą nasz przedstawiciel.')
+    this.conversator.callback().sendText(
+      'Przepraszam, ale wystąpił błąd po stronie systemu Beauty Zazero.\n'
+        + 'Skontaktuje się z Tobą nasz przedstawiciel.'
+    )
   }
 }
 

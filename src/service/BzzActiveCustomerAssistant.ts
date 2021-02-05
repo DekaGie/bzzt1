@@ -1,28 +1,22 @@
-import { isDeepStrictEqual } from 'util'
 import { Optional } from 'typescript-optional'
-import InteractionCallback from './spi/InteractionCallback'
 import ImageUrl from './domain/ImageUrl'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
 import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
 import StaticImageUrls from './StaticImageUrls'
+import CustomerConversator from './CustomerConversator'
 
 class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
-  static SHOW_PARTNERS: any = {
-    type: 'ACTIVE_CUSTOMER_ACTION',
-    action: 'SHOW_PARTNERS'
-  }
+  private readonly conversator: CustomerConversator;
 
   private readonly registration: CardRegistrationDbo;
 
-  private readonly callback: InteractionCallback;
-
-  constructor (registration: CardRegistrationDbo, callback: InteractionCallback) {
+  constructor (conversator: CustomerConversator, registration: CardRegistrationDbo) {
+    this.conversator = conversator
     this.registration = registration
-    this.callback = callback
   }
 
   onText (text: string): void {
-    this.callback.sendOptions(
+    this.conversator.callback().sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
         title: 'Witaj ponownie!',
@@ -30,7 +24,17 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
         buttons: [
           {
             text: 'Salony partnerskie',
-            command: BzzActiveCustomerAssistant.SHOW_PARTNERS
+            command: {
+              type: 'ACTIVE_CUSTOMER_ACTION',
+              action: 'SHOW_PARTNERS'
+            }
+          },
+          {
+            text: 'Aktywne usługi',
+            command: {
+              type: 'ACTIVE_CUSTOMER_ACTION',
+              action: 'SHOW_SUBSCRIPTIONS'
+            }
           },
           {
             text: 'Obsługa klienta',
@@ -42,27 +46,50 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
   }
 
   onImage (url: ImageUrl): void {
-    this.callback.sendText(`Dzięki, ale Twoja karta ${this.registration.card.cardNumber} (od ${this.registration.card.agreement.employerName}) jest już aktywna, więc nie potrzebuję od Ciebie więcej zdjęć :)`)
+    this.conversator.callback().sendText(
+      `Dzięki, ale Twoja karta ${this.registration.card.cardNumber} (od ${this.registration.card.agreement.employerName}) jest już aktywna, więc nie potrzebuję od Ciebie więcej zdjęć :)`
+    )
   }
 
   onCommand (command: any): void {
-    if (!isDeepStrictEqual(command, BzzActiveCustomerAssistant.SHOW_PARTNERS)) {
-      console.error(`received unexpected command: ${JSON.stringify(command)}`)
-      this.callback.sendText('Przepraszam, nie zrozumiałem Cię.')
+    if (command.type !== 'ACTIVE_CUSTOMER_ACTION') {
       return
     }
-    this.showPartners()
+    if (command.action === 'SHOW_PARTNERS') {
+      this.showPartners()
+      return
+    }
+    if (command.action === 'SHOW_SUBSCRIPTIONS') {
+      this.showSubscriptions()
+      return
+    }
+    if (command.action === 'SHOW_TUTORIAL') {
+      this.showTutorial()
+      return
+    }
+    console.error(`Got unexpected command: ${JSON.stringify(command)}`)
+  }
+
+  private showTutorial (): void {
+    this.conversator.callback().sendImage(
+      StaticImageUrls.ACCEPTED_SIGN,
+      'Szukaj tego szyldu!'
+    )
+    this.conversator.callback().sendText(
+      'Zapytaj mnie o aktywne na Twojej karcie usługi.\n'
+        + 'Następnie spytaj o salony, które akceptują kartę.\n'
+        + 'Umów się na wizytę w dowolny sposób - nie musisz nawet wspominać o karcie. '
+        + 'Po prostu przy płatności wyciągnij ją zamiast karty płatniczej :)'
+    )
   }
 
   private showPartners (): void {
-    this.callback.sendOptions(
+    this.conversator.callback().sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.POWER_BANNER),
         title: 'Power Brows',
         subtitle: Optional.of(
-          '- Wszystko dla brwi\n'
-              + '- Rzęsy: laminacja i henna\n'
-              + '- Depilacja twarzy woskiem'
+          'Brwi: wszystko. Rzęsy: Laminacja, Henna.'
         ),
         buttons: [
           {
@@ -74,15 +101,12 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
             phoneNumber: '+48736842624'
           }
         ]
-      }
-    )
-    this.callback.sendOptions(
+      },
       {
         topImage: Optional.of(StaticImageUrls.GINGER_BANNER),
         title: 'Ginger Zone',
         subtitle: Optional.of(
-          '- Rzęsy: przedłużanie 1:1, laminacja i henna\n'
-              + '- Wszystko dla brwi'
+          'Rzęsy: Przedłużanie 1:1, Laminacja, Henna. Brwi: wszystko.'
         ),
         buttons: [
           {
@@ -94,6 +118,27 @@ class BzzActiveCustomerAssistant implements BzzCustomerAssistant {
             phoneNumber: '+48691120992'
           }
         ]
+      }
+    )
+  }
+
+  private showSubscriptions (): void {
+    this.conversator.callback().sendOptions(
+      {
+        topImage: Optional.of(StaticImageUrls.BROWS),
+        title: 'Brwi',
+        subtitle: Optional.of(
+          'Regulacja, Laminacja, Henna, Depilacja twarzy woskiem.'
+        ),
+        buttons: []
+      },
+      {
+        topImage: Optional.of(StaticImageUrls.LASHES),
+        title: 'Rzęsy',
+        subtitle: Optional.of(
+          'Laminacja, Henna, Przedłużanie 1:1.'
+        ),
+        buttons: []
       }
     )
   }

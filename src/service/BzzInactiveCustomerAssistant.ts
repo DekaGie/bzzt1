@@ -1,94 +1,60 @@
 import { Optional } from 'typescript-optional'
-import { isDeepStrictEqual } from 'util'
-import InteractionCallback from './spi/InteractionCallback'
 import ImageUrl from './domain/ImageUrl'
 import BarcodeParser from './BarcodeParser'
-import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
 import StaticImageUrls from './StaticImageUrls'
-import CustomerExternalInfo from './CustomerExternalInfo'
-import CardRepository from '../db/repo/CardRepository'
-import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
-import CardDbo from '../db/dbo/CardDbo'
-import BzzActiveCustomerAssistant from './BzzActiveCustomerAssistant'
+import BangAssistantDelegate from './BangAssistantDelegate'
+import CardRegistrator from './CardRegistrator'
+import CustomerConversator from './CustomerConversator'
+import StateCategoryId from './domain/StateCategoryId'
+import StateSlot from './StateSlot'
 
 class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
-  private static ACTIVATE: any = {
-    type: 'INACTIVE_CUSTOMER_ACTION',
-    action: 'ACTIVATE'
-  }
+  private static readonly ASKED_FOR_ACTIVATE: StateCategoryId =
+      new StateCategoryId(BzzInactiveCustomerAssistant.name, 'ASKED_FOR_ACTIVATE');
 
-  private readonly registrationRepository: CardRegistrationRepository;
+  private readonly conversator: CustomerConversator;
 
-  private readonly cardRepository: CardRepository;
+  private readonly bangDelegate: BangAssistantDelegate;
+
+  private readonly cardRegistrator: CardRegistrator;
 
   private readonly barcodeParser: BarcodeParser;
 
-  private readonly customerInfo: CustomerExternalInfo;
-
-  private readonly callback: InteractionCallback;
-
   constructor (
-    registrationRepository: CardRegistrationRepository,
-    cardRepository: CardRepository,
+    conversator: CustomerConversator,
+    bangDelegate: BangAssistantDelegate,
     barcodeParser: BarcodeParser,
-    customerInfo: CustomerExternalInfo,
-    callback: InteractionCallback
+    cardRegistrator: CardRegistrator
   ) {
-    this.registrationRepository = registrationRepository
-    this.cardRepository = cardRepository
+    this.conversator = conversator
+    this.bangDelegate = bangDelegate
     this.barcodeParser = barcodeParser
-    this.customerInfo = customerInfo
-    this.callback = callback
+    this.cardRegistrator = cardRegistrator
   }
 
   onText (text: string): void {
-    if (text === '!me') {
-      const info: string = `${this.customerInfo.firstName} ${this.customerInfo.lastName} (${this.customerInfo.id})`
-      this.customerInfo.picture.ifPresentOrElse(
-        (picture) => this.callback.sendImage(picture, info),
-        () => this.callback.sendText(info)
-      )
-      return
-    }
-    if (text.startsWith('!spr')) {
-      const cardNumber: Optional<number> = BzzInactiveCustomerAssistant.extractNumber(text)
-      if (cardNumber.isPresent()) {
-        this.cardRepository.findFull(cardNumber.get())
-          .then(Optional.ofNullable)
-          .then(
-            (optionalCard) => {
-              if (optionalCard.isPresent()) {
-                const reg: Optional<CardRegistrationDbo> = Optional.ofNullable(optionalCard.get().registration)
-                if (reg.isPresent()) {
-                  this.callback.sendText(`Ma za darmo 1:1, laminację i hennę rzęs, wszystko na brwi oraz depilację twarzy woskiem (płaci za nią firma ${optionalCard.get().agreement.employerName}).`)
-                } else {
-                  this.callback.sendText('Karta nie została aktywowana! (Klientka musi zagadać do tego samego bota)')
-                }
-              } else {
-                this.callback.sendText('Błędny numer karty!')
-              }
-            }
-          )
-      } else {
-        this.callback.sendText('Podaj numer karty, np. "!spr 141520103')
-      }
+    if (text.startsWith('!')) {
+      this.bangDelegate.onBang(text.substring(1))
       return
     }
     const cardNumber: Optional<number> = BzzInactiveCustomerAssistant.extractNumber(text)
     if (cardNumber.isPresent()) {
-      this.validateAndRegister(cardNumber.get())
+      this.onCardNumber(cardNumber.get())
       return
     }
-    this.callback.sendOptions(
+    this.conversator.callback().sendOptions(
       {
         topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
-        title: `Hej, ${this.customerInfo.shorthand()}!`,
-        subtitle: Optional.of(`Czym jesteś zainteresowan${this.customerInfo.gender.mSuffix}?`),
+        title: 'Hej, nieznajoma!',
+        subtitle: Optional.of('Czym jesteś zainteresowana?'),
         buttons: [
           {
             text: 'Aktywuj kartę!',
-            command: BzzInactiveCustomerAssistant.ACTIVATE
+            command: {
+              type: 'INACTIVE_CUSTOMER_ACTION',
+              action: 'PROMPT_ACTIVATE'
+            }
           },
           {
             text: 'Obsługa klienta',
@@ -100,80 +66,61 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
   }
 
   onCommand (command: any): void {
-    if (!isDeepStrictEqual(command, BzzInactiveCustomerAssistant.ACTIVATE)) {
-      console.error(`received unexpected command: ${JSON.stringify(command)}`)
-      this.callback.sendText('Przepraszam, nie zrozumiałem Cię.')
+    if (command.type !== 'INACTIVE_CUSTOMER_ACTION') {
       return
     }
-    this.callback.sendText('Dobrze :)\nW takim razie zeskanuj swoją kartę Beauty Zazero lub podaj mi jej numer.')
+    if (command.action === 'PROMPT_ACTIVATE') {
+      this.conversator.state(BzzInactiveCustomerAssistant.ASKED_FOR_ACTIVATE).set(true)
+      this.conversator.callback().sendText(
+        'Dobrze :)\nW takim razie zrób zdjęcie swojej karty Beauty Zazero lub podaj mi jej numer.'
+      )
+      return
+    }
+    if (command.action === 'ACTIVATE') {
+      this.cardRegistrator.validateAndRegister(this.conversator, command.cardNumber)
+      return
+    }
+    console.error(`Got unexpected command: ${JSON.stringify(command)}`)
   }
 
   onImage (url: ImageUrl): void {
-    this.barcodeParser.parse(url)
-      .then(
-        (fromImage) => {
-          fromImage.ifPresentOrElse(
-            (cardNumber) => this.validateAndRegister(cardNumber),
-            () => this.callback.sendText('Postaraj się wykonać z bliska zdjęcie kompletnego kodu kreskowego karty.')
+    this.barcodeParser.parse(url).then(
+      (cardNumber) => {
+        if (!cardNumber.isPresent()) {
+          this.conversator.callback().sendText(
+            'Postaraj się wykonać z bliska zdjęcie kompletnego kodu kreskowego karty.'
           )
+          return
         }
-      )
-  }
-
-  private validateAndRegister (cardNumber: number) {
-    this.cardRepository.findFull(cardNumber)
-      .then(Optional.ofNullable)
-      .then(
-        (optionalCard) => {
-          if (!optionalCard.isPresent()) {
-            this.callback.sendText(`Hmmm, ${cardNumber}?\nTo nie wygląda jak prawidłowy numer karty Beauty Zazero :(`)
-            return
-          }
-          const card: CardDbo = optionalCard.get()
-          if (Optional.ofNullable(card.registration).isPresent()) {
-            this.callback.sendText('Ta karta została już aktywowana przez kogoś innego.')
-            return
-          }
-          // TODO: check validity period
-          this.register(card)
-            .then(
-              (success) => {
-                if (success) {
-                  this.promptActive(card)
-                } else {
-                  this.callback.sendText(
-                    'Przepraszam, ale wystąpił błąd podczas rejestracji.\n'
-                        + 'Skontaktuje się z Tobą nasz przedstawiciel.'
-                  )
-                }
-              }
-            )
-        }
-      )
-      .catch(
-        (error) => {
-          console.error(`while validating card ${cardNumber}`)
-          console.error(error)
-        }
-      )
-  }
-
-  private promptActive (card: CardDbo): void {
-    this.callback.sendOptions(
-      {
-        topImage: Optional.empty(),
-        title: 'Świetnie!',
-        subtitle: Optional.of(
-          `Twoja karta od ${card.agreement.employerName} została aktywowana!\nChcesz wiedzieć gdzie jej użyć?`
-        ),
-        buttons: [
-          {
-            command: BzzActiveCustomerAssistant.SHOW_PARTNERS,
-            text: 'Tak!'
-          }
-        ]
+        this.onCardNumber(cardNumber.get())
       }
     )
+  }
+
+  onCardNumber (cardNumber: number): void {
+    const asked: StateSlot<Boolean> = this.conversator.state(BzzInactiveCustomerAssistant.ASKED_FOR_ACTIVATE)
+    asked.defaultTo(false)
+    if (asked.get()) {
+      this.cardRegistrator.validateAndRegister(this.conversator, cardNumber)
+    } else {
+      this.conversator.callback().sendOptions(
+        {
+          topImage: Optional.empty(),
+          title: 'Ooo, to karta Beauty Zazero!',
+          subtitle: Optional.of('Chcesz ją aktywować?'),
+          buttons: [
+            {
+              text: 'Tak!',
+              command: {
+                type: 'INACTIVE_CUSTOMER_ACTION',
+                action: 'ACTIVATE',
+                cardNumber
+              }
+            }
+          ]
+        }
+      )
+    }
   }
 
   private static extractNumber (string: string): Optional<number> {
@@ -182,25 +129,9 @@ class BzzInactiveCustomerAssistant implements BzzCustomerAssistant {
         .filter((char) => char >= '0' && char <= '9')
         .reduce((left, right) => left + right, '')
     )
-      .filter((string) => string.length === 9)
+      .filter((string) => string.length > 6)
       .map((string) => Number.parseInt(string, 10))
       .filter((integer) => !Number.isNaN(integer))
-  }
-
-  private register (card: CardDbo): Promise<boolean> {
-    const registration: CardRegistrationDbo = new CardRegistrationDbo()
-    registration.card = card
-    registration.customerId = this.customerInfo.id.toRepresentation()
-    registration.manualAnnotation = 'Pierwsze testowe, ufać bez identyfikacji!'
-    return this.registrationRepository.save(registration)
-      .then(() => true)
-      .catch(
-        (error) => {
-          console.error(`while registering ${card.cardNumber} to ${this.customerInfo.id}`)
-          console.error(error)
-          return false
-        }
-      )
   }
 }
 

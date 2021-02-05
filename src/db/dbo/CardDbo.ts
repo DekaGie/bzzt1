@@ -28,7 +28,13 @@ class CardDbo {
   @JoinColumn()
   agreement: AgreementDbo;
 
-  @Column({ type: 'text', nullable: false, default: '' })
+  @Column(
+    {
+      type: 'text',
+      nullable: false,
+      default: ''
+    }
+  )
   manualAnnotation: string;
 }
 

@@ -1,12 +1,12 @@
 import { Column, Entity, PrimaryColumn } from 'typeorm'
 
 @Entity()
-class AgreementDbo {
+class SalonDbo {
   @PrimaryColumn()
-  employerName: string;
+  salonName: string;
 
-  @Column({ type: 'double precision', nullable: false })
-  validUntilEs: number;
+  @Column({ type: 'text', nullable: false })
+  salonSecret: string;
 
   @Column(
     {
@@ -18,4 +18,4 @@ class AgreementDbo {
   manualAnnotation: string;
 }
 
-export default AgreementDbo
+export default SalonDbo
