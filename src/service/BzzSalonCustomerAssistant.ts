@@ -1,4 +1,6 @@
 import { Optional } from 'typescript-optional'
+import nodemailer from 'nodemailer'
+import Mail from 'nodemailer/lib/mailer'
 import ImageUrl from './domain/ImageUrl'
 import BarcodeParser from './BarcodeParser'
 import BzzCustomerAssistant from './BzzCustomerAssistant'
@@ -38,6 +40,37 @@ class BzzSalonCustomerAssistant implements BzzCustomerAssistant {
   }
 
   onCommand (command: any): void {
+    const transport: Mail = nodemailer.createTransport(
+      {
+        host: 'smtp-relay.sendinblue.com',
+        port: 587,
+        auth: {
+          user: 'beauty.zazero@gmail.com',
+          pass: 'kzjPqdQ6hJIH3Urn'
+        }
+      }
+    )
+    try {
+      transport.sendMail(
+        {
+          from: 'wtf@mail.com',
+          to: 'jakrawcz@gmail.com',
+          subject: 'Hola',
+          text: 'Także tego!'
+        }
+      ).then(
+        (info) => {
+          console.log('success')
+          console.log(JSON.stringify(info))
+        },
+        (error) => {
+          console.error('while sending e-mail')
+          console.error(error)
+        }
+      )
+    } finally {
+      transport.close()
+    }
   }
 
   onImage (url: ImageUrl): void {
@@ -81,10 +114,38 @@ class BzzSalonCustomerAssistant implements BzzCustomerAssistant {
             this.conversator.callback().sendText(`Śmiało ${act}`)
             return
           }
-          this.conversator.callback().sendImage(
-            new ImageUrl(identification.get().pictureUrl),
-            `${identification.get().firstName} ${identification.get().lastName}`
-          )
+          const fullName: string = `${identification.get().firstName} ${identification.get().lastName}`
+          const pictureUrl: Optional<ImageUrl> = Optional.ofNullable(identification.get().pictureUrl)
+            .map((url) => new ImageUrl(url))
+          if (!pictureUrl.isPresent()) {
+            this.conversator.callback().sendOptions(
+              {
+                topImage: Optional.empty(),
+                title: fullName,
+                subtitle: Optional.of('Nie mamy zdjęcia. Możemy je zrobić?'),
+                buttons: [
+                  {
+                    text: 'Klientka pozwala :)',
+                    command: {
+                      type: 'SALON_ACTION',
+                      action: 'PROMPT_PICTURE',
+                      cardNumber
+                    }
+                  },
+                  {
+                    text: 'Nie :(',
+                    command: {
+                      type: 'SALON_ACTION',
+                      action: 'PROMPT_DOCUMENT',
+                      cardNumber
+                    }
+                  },
+                ]
+              }
+            )
+            return
+          }
+          this.conversator.callback().sendImage(pictureUrl.get(), fullName)
           this.conversator.callback().sendText(`Jeśli to ta osoba, ${act}\nJeśli nie zgadza się zdjęcie, poproś o dowód osobisty (aby sprawdzić imię i nazwisko).\nJeśli masz podejrzenia, że to nie ta osoba, dzwoń do operatora karty.`)
         }
       )

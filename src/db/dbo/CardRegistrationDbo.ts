@@ -22,7 +22,7 @@ class CardRegistrationDbo {
     (identification) => identification.registration,
     { nullable: true }
   )
-  identification: IdentificationDbo;
+  identification: IdentificationDbo | null;
 
   @Column(
     {

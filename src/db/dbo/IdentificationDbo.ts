@@ -11,14 +11,14 @@ class IdentificationDbo {
   @OneToOne(
     () => CardRegistrationDbo,
     (registration) => registration.identification,
-    { nullable: true }
+    { nullable: false }
   )
   @JoinColumn(
     {
       name: 'customerId'
     }
   )
-  registration: CardRegistrationDbo | null;
+  registration: CardRegistrationDbo;
 
   @Column({ type: 'text', nullable: false })
   firstName: string;
@@ -26,8 +26,8 @@ class IdentificationDbo {
   @Column({ type: 'text', nullable: false })
   lastName: string;
 
-  @Column({ type: 'text', nullable: false })
-  pictureUrl: string;
+  @Column({ type: 'text', nullable: true })
+  pictureUrl: string | null;
 }
 
 export default IdentificationDbo
