@@ -11,6 +11,8 @@ import BangAssistantDelegate from './BangAssistantDelegate'
 import CardRegistrator from './CardRegistrator'
 import SalonRegistrator from './SalonRegistrator'
 import CustomerConversator from './CustomerConversator'
+import BzzSalonCustomerAssistant from './BzzSalonCustomerAssistant'
+import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
 
 class BzzCustomerCare {
   private readonly barcodeParser: BarcodeParser
@@ -38,28 +40,57 @@ class BzzCustomerCare {
   }
 
   assistantFor (conversator: CustomerConversator): Promise<BzzCustomerAssistant> {
+    return this.salonRegistrationRepository.findFull(conversator.id().toRepresentation())
+      .then(Optional.ofNullable)
+      .then(
+        (optionalSalonRegistration) => optionalSalonRegistration.map(
+          (salonRegistration) => this.salonAssistantFor(conversator)
+        ).orElseGet(
+          () => this.publicAssistantFor(conversator)
+        )
+      )
+  }
+
+  private salonAssistantFor (conversator: CustomerConversator): Promise<BzzCustomerAssistant> {
+    return Promise.resolve(
+      new BzzSalonCustomerAssistant(conversator, this.barcodeParser, this.cardRepository)
+    )
+  }
+
+  private publicAssistantFor (conversator: CustomerConversator): Promise<BzzCustomerAssistant> {
     return this.cardRegistrationRepository.findFull(conversator.id().toRepresentation())
       .then(Optional.ofNullable)
       .then(
-        (registration) => {
-          if (registration.isPresent()) {
-            return new BzzActiveCustomerAssistant(conversator, registration.get())
-          }
-          return new BzzInactiveCustomerAssistant(
-            conversator,
-            new BangAssistantDelegate(
-              conversator,
-              new SalonRegistrator(
-                this.salonRepository, this.salonRegistrationRepository
-              )
-            ),
-            this.barcodeParser,
-            new CardRegistrator(
-              this.cardRepository, this.cardRegistrationRepository
-            )
-          )
-        }
+        (optionalCardRegistration) => optionalCardRegistration.map(
+          (cardRegistration) => this.activeAssistantFor(conversator, cardRegistration)
+        ).orElseGet(
+          () => this.inactiveAssistantFor(conversator)
+        )
       )
+  }
+
+  private activeAssistantFor (
+    conversator: CustomerConversator, registration: CardRegistrationDbo
+  ): Promise<BzzCustomerAssistant> {
+    return Promise.resolve(new BzzActiveCustomerAssistant(conversator, registration))
+  }
+
+  private inactiveAssistantFor (conversator: CustomerConversator): Promise<BzzCustomerAssistant> {
+    return Promise.resolve(
+      new BzzInactiveCustomerAssistant(
+        conversator,
+        new BangAssistantDelegate(
+          conversator,
+          new SalonRegistrator(
+            this.salonRepository, this.salonRegistrationRepository
+          )
+        ),
+        this.barcodeParser,
+        new CardRegistrator(
+          this.cardRepository, this.cardRegistrationRepository
+        )
+      )
+    )
   }
 }
 
