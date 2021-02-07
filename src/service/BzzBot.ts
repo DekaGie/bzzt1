@@ -50,17 +50,18 @@ class BzzBot implements FbMessengerBot {
           if (reactions.length === 0) {
             console.warn(`no reaction to ${psid} inquiring ${JSON.stringify(inquiry)}`)
           }
-          const groups: Array<[string, Array<Reaction>]> = Arrays.sequenceGroupBy(
+          const groups: Array<Array<Reaction>> = Arrays.sequenceGroupBy(
             reactions, (reaction) => reaction.type
           )
           return Promises.sequential(
-            groups, (group) => this.send(outbox, psid, group[0], group[1])
+            groups, (group) => this.send(outbox, psid, group)
           )
         }
       )
   }
 
-  private send (outbox: FbMessengerOutbox, psid: string, type: string, reactions: Array<Reaction>): Promise<void> {
+  private send (outbox: FbMessengerOutbox, psid: string, reactions: Array<Reaction>): Promise<void> {
+    const type: string = Arrays.getUniformElement(reactions.map((reaction) => reaction.type))
     switch (type) {
       case 'PLAIN_TEXT': {
         const plainTexts: Array<PlainTextReaction> = reactions as Array<PlainTextReaction>

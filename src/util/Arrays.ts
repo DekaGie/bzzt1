@@ -1,5 +1,5 @@
 class Arrays {
-  static sequenceGroupBy<K, T> (array: Array<T>, keyFunction: (T) => K): Array<[K, Array<T>]> {
+  static sequenceGroupBy<K, T> (array: Array<T>, keyFunction: (T) => K): Array<Array<T>> {
     return array.reduce(
       (groups, element) => {
         if (groups.length === 0) {
@@ -16,6 +16,17 @@ class Arrays {
         return groups
       },
       []
+    )
+  }
+
+  static getUniformElement<T> (array: Array<T>): T {
+    return array.reduce(
+      (left, right) => {
+        if (left !== right) {
+          throw new Error(`non-uniform elements in ${JSON.stringify(array)}`)
+        }
+        return left
+      }
     )
   }
 }
