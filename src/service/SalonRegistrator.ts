@@ -2,7 +2,10 @@ import { Optional } from 'typescript-optional'
 import SalonRepository from '../db/repo/SalonRepository'
 import SalonRegistrationRepository from '../db/repo/SalonRegistrationRepository'
 import SalonRegistrationDbo from '../db/dbo/SalonRegistrationDbo'
-import CustomerConversator from './CustomerConversator'
+import CustomerId from './domain/CustomerId'
+import Reaction from './spi/Reaction'
+import Reactions from './spi/Reactions'
+import Results from './Results'
 
 class SalonRegistrator {
   private readonly salonRepository: SalonRepository;
@@ -18,11 +21,11 @@ class SalonRegistrator {
   }
 
   validateAndRegister (
-    conversator: CustomerConversator,
+    customerId: CustomerId,
     salonName: string,
     salonSecret: string
-  ): void {
-    this.salonRepository.createQueryBuilder('salon')
+  ): Promise<Array<Reaction>> {
+    return this.salonRepository.createQueryBuilder('salon')
       .where('salon.salonName = :salonName')
       .setParameters({ salonName })
       .getOne()
@@ -30,33 +33,25 @@ class SalonRegistrator {
       .then(
         (salon) => {
           if (!salon.isPresent()) {
-            conversator.callback().sendText(`Nie znam salonu "${salonName}".`)
-            return
+            return Results.many(Reactions.plainText(`Nie znam salonu "${salonName}".`))
           }
           if (salon.get().salonSecret !== salonSecret) {
-            conversator.callback().sendText(
-              `Niestety, "${salonSecret}" to nie jest poprawne hasło salonu "${salonName}".`
-            )
-            return
+            return Results.many(Reactions.plainText(`Niestety, salon "${salonName}" ma hasło inne niż "${salonSecret}".`))
           }
           const registration: SalonRegistrationDbo = new SalonRegistrationDbo()
           registration.salon = salon.get()
-          registration.customerId = conversator.id().toRepresentation()
-          this.salonRegistrationRepository.save(registration)
-            .then(
-              () => {
-                conversator.callback().sendText(
-                  'Twoje konto od teraz powiązane jest z salonem i służy do skanowania kart klientek.'
-                )
-              },
-              (error) => {
-                console.error(`while registering ${salon.get().salonName} to ${conversator.id()}`)
-                console.error(error)
-                conversator.callback().sendText('Niestety wystąpił błąd. Spróbuj później.')
-              }
-            )
+          registration.customerId = customerId.toRepresentation()
+          return this.salonRegistrationRepository.save(registration).then(
+            () => Results.many(Reactions.plainText('Twoje konto od teraz powiązane jest z salonem i służy do skanowania kart klientek.'))
+          )
         }
       )
+  }
+
+  unregister (customerId: CustomerId) {
+    return this.salonRegistrationRepository.deleteIfExists(customerId.toRepresentation()).then(
+      (success) => Results.many(Reactions.plainText(success ? 'ok' : 'nieaktywny?'))
+    )
   }
 }
 

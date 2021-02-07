@@ -12,7 +12,7 @@ class StateStore {
     this.memory = new Map()
   }
 
-  get <T> (customerId: CustomerId, categoryId: StateCategoryId): StateSlot<T> {
+  slot<T> (customerId: CustomerId, categoryId: StateCategoryId): StateSlot<T> {
     const key: string = customerId.toRepresentation()
         + StateStore.SEPARATOR + categoryId.toRepresentation()
     return Optional.ofNullable(this.memory.get(key)).orElseGet(

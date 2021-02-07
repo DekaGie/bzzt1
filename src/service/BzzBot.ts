@@ -1,142 +1,141 @@
-// eslint-disable-next-line max-classes-per-file
-import BzzCustomerAssistant from './BzzCustomerAssistant'
-import InteractionCallback from './spi/InteractionCallback'
-import BzzCustomerCare from './BzzCustomerCare'
+import CustomerAssistant from './CustomerAssistant'
 import FbMessengerOutbox from '../fb/FbMessengerOutbox'
-import ImageUrl from './domain/ImageUrl'
 import CustomerId from './domain/CustomerId'
 import FbMessengerBot from '../fb/FbMessengerBot'
-import ErrorCustomerAssistant from './ErrorCustomerAssistant'
-import OptionsInteraction from './spi/OptionsInteraction'
-import CustomerConversator from './CustomerConversator'
-import StateStore from './StateStore'
-
-class LocalInteractionCallback implements InteractionCallback {
-  private readonly outbox: FbMessengerOutbox;
-
-  private readonly psid: string;
-
-  constructor (outbox: FbMessengerOutbox, psid: string) {
-    this.outbox = outbox
-    this.psid = psid
-  }
-
-  sendText (text: string): void {
-    this.outbox.sendText(this.psid, text)
-  }
-
-  sendImage (url: ImageUrl, caption: string): void {
-    this.outbox.sendGenericTemplate(
-      this.psid,
-      [
-        {
-          topImage: {
-            url: url.asString(),
-            squareRatio: true
-          },
-          title: caption,
-          buttons: []
-        }
-      ]
-    )
-  }
-
-  sendOptions (...interactions: Array<OptionsInteraction>): void {
-    this.outbox.sendGenericTemplate(
-      this.psid,
-      interactions.map(
-        (interaction) => (
-          {
-            topImage: interaction.topImage.map(
-              (imageUrl) => ({
-                url: imageUrl.asString(),
-                squareRatio: false
-              })
-            ).orNull(),
-            title: interaction.title,
-            subtitle: interaction.subtitle.orNull(),
-            buttons: interaction.buttons.map(
-              (button) => (
-                'command' in button
-                  ? {
-                    text: button.text,
-                    postback: JSON.stringify(button.command)
-                  }
-                  : button
-              )
-            )
-          }
-        )
-      )
-    )
-  }
-}
+import FreeTextInquiry from './spi/FreeTextInquiry'
+import Inquiry from './spi/Inquiry'
+import Reaction from './spi/Reaction'
+import PlainTextReaction from './spi/PlainTextReaction'
+import RichImageReaction from './spi/RichImageReaction'
+import RichChoiceReaction from './spi/RichChoiceReaction'
+import Arrays from '../util/Arrays'
+import { InquiryChoice, LinkChoice, PhoneChoice } from './spi/Choice'
+import ImageUrl from './domain/ImageUrl'
+import ImageInquiry from './spi/ImageInquiry'
+import Promises from '../util/Promises'
+import Reactions from './spi/Reactions'
+import Results from './Results'
+import StaticTexts from './StaticTexts'
 
 class BzzBot implements FbMessengerBot {
-  private readonly customerCare: BzzCustomerCare
+  private readonly customerAssistant: CustomerAssistant<CustomerId>
 
-  private readonly stateStore: StateStore;
-
-  constructor (customerCare: BzzCustomerCare, stateStore: StateStore) {
-    this.customerCare = customerCare
-    this.stateStore = stateStore
+  constructor (customerAssistant: CustomerAssistant<CustomerId>) {
+    this.customerAssistant = customerAssistant
   }
 
   onText (psid: string, text: string, outbox: FbMessengerOutbox): void {
-    this.getAssistant(psid, outbox).then(
-      (assistant) => {
-        try {
-          assistant.onText(text)
-        } catch (error) {
-          console.error(`while ${psid} was handling text: ${text}`)
-          console.error(error)
-        }
-      }
-    )
+    this.onInquiry(psid, { type: 'FREE_TEXT', freeText: text } as FreeTextInquiry, outbox)
   }
 
   onImage (psid: string, url: string, outbox: FbMessengerOutbox): void {
-    this.getAssistant(psid, outbox).then(
-      (assistant) => {
-        try {
-          assistant.onImage(new ImageUrl(url))
-        } catch (error) {
-          console.error(`while ${psid} was handling image: ${url}`)
-          console.error(error)
-        }
-      }
-    )
+    this.onInquiry(psid, { type: 'IMAGE', imageUrl: new ImageUrl(url) } as ImageInquiry, outbox)
   }
 
   onPostback (psid: string, payload: string, outbox: FbMessengerOutbox): void {
-    this.getAssistant(psid, outbox).then(
-      (assistant) => {
-        try {
-          assistant.onCommand(JSON.parse(payload))
-        } catch (error) {
-          console.error(`while ${psid} was executing command: ${payload}`)
-          console.error(error)
-        }
-      }
-    )
+    this.onInquiry(psid, JSON.parse(payload) as Inquiry, outbox)
   }
 
-  private getAssistant (
-    psid: string, outbox: FbMessengerOutbox
-  ): Promise<BzzCustomerAssistant> {
-    const conversator: CustomerConversator = new CustomerConversator(
-      new CustomerId(psid),
-      this.stateStore,
-      new LocalInteractionCallback(outbox, psid)
-    )
-    return this.customerCare.assistantFor(conversator)
+  private onInquiry (psid: string, inquiry: Inquiry, outbox: FbMessengerOutbox): void {
+    this.customerAssistant.handle(new CustomerId(psid), inquiry)
       .catch(
         (error) => {
-          console.error(`while getting assistant for ${psid}`)
+          console.error(`while handling ${psid} inquiring ${JSON.stringify(inquiry)}`)
           console.error(error)
-          return new ErrorCustomerAssistant(conversator)
+          return Results.many(Reactions.plainText(StaticTexts.unexpectedError()))
         }
       )
+      .then(
+        (reactions) => {
+          if (reactions.length === 0) {
+            console.warn(`no reaction to ${psid} inquiring ${JSON.stringify(inquiry)}`)
+          }
+          const groups: Array<[string, Array<Reaction>]> = Arrays.sequenceGroupBy(
+            reactions, (reaction) => reaction.type
+          )
+          return Promises.sequential(
+            groups, (group) => this.send(outbox, psid, group[0], group[1])
+          )
+        }
+      )
+  }
+
+  private send (outbox: FbMessengerOutbox, psid: string, type: string, reactions: Array<Reaction>): Promise<void> {
+    switch (type) {
+      case 'PLAIN_TEXT': {
+        const plainTexts: Array<PlainTextReaction> = reactions as Array<PlainTextReaction>
+        return Promises.sequential(
+          plainTexts, (plainText) => outbox.sendText(psid, plainText.plainText)
+        )
+      }
+      case 'RICH_IMAGE': {
+        const richImages: Array<RichImageReaction> = reactions as Array<RichImageReaction>
+        return outbox.sendGenericTemplate(
+          psid,
+          richImages.map(
+            (richImage) => (
+              {
+                topImage: { url: richImage.imageUrl.asString(), squareRatio: true },
+                title: richImage.caption,
+                buttons: []
+              }
+            )
+          )
+        )
+      }
+      case 'RICH_CHOICE': {
+        const richChoices: Array<RichChoiceReaction> = reactions as Array<RichChoiceReaction>
+        return outbox.sendGenericTemplate(
+          psid,
+          richChoices.map(
+            (richChoice) => (
+              {
+                topImage: richChoice.topImage.map(
+                  (imageUrl) => (
+                    {
+                      url: imageUrl.asString(),
+                      squareRatio: false
+                    }
+                  )
+                ).orNull(),
+                title: richChoice.title,
+                subtitle: richChoice.subtitle.orNull(),
+                buttons: richChoice.choices.map(
+                  (choice) => {
+                    switch (choice.type) {
+                      case 'LINK': {
+                        return {
+                          text: choice.label,
+                          url: (choice as LinkChoice).url
+                        }
+                      }
+                      case 'PHONE': {
+                        return {
+                          text: choice.label,
+                          phoneNumber: (choice as PhoneChoice).phone
+                        }
+                      }
+                      case 'INQUIRY': {
+                        return {
+                          text: choice.label,
+                          postback: JSON.stringify((choice as InquiryChoice).inquiry)
+                        }
+                      }
+                      default: {
+                        throw new Error(`unexpected choice type: ${choice.type}`)
+                      }
+                    }
+                  }
+                )
+              }
+            )
+          )
+        )
+      }
+      default: {
+        throw new Error(`unexpected reaction type: ${type}`)
+      }
+    }
   }
 }
 

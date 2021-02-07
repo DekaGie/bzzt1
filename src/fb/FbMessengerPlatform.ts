@@ -74,21 +74,6 @@ class FbMessengerPlatform {
   private handlePostback (psid: string, postback: JsonObject): void {
     this.bot.onPostback(psid, postback.mandatory('payload').asString(), this.outbox)
   }
-
-  // private handleNumber (senderId: string, cardNumber: number): void {
-  //   this.respond(senderId, this.cardChecker.check(cardNumber))
-  // }
-
-  // private static extractNumber (string: string): Optional<number> {
-  //   return Optional.of(
-  //     Number.parseInt(
-  //       Array.from(string)
-  //         .filter((char) => char >= '0' && char <= '9')
-  //         .reduce((left, right) => left + right, ''),
-  //       10
-  //     )
-  //   ).filter((value) => !Number.isNaN(value))
-  // }
 }
 
 export default FbMessengerPlatform

@@ -4,13 +4,18 @@ import CardRepository from '../db/repo/CardRepository'
 import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
 import CardDbo from '../db/dbo/CardDbo'
 import Instant from './domain/Instant'
-import CustomerConversator from './CustomerConversator'
 import StaticImageUrls from './StaticImageUrls'
+import Reaction from './spi/Reaction'
+import CustomerId from './domain/CustomerId'
+import Reactions from './spi/Reactions'
+import StaticTexts from './StaticTexts'
+import Results from './Results'
+import Choices from './spi/Choices'
 
 class CardRegistrator {
-  private readonly cardRegistrationRepository: CardRegistrationRepository;
-
   private readonly cardRepository: CardRepository;
+
+  private readonly cardRegistrationRepository: CardRegistrationRepository;
 
   constructor (
     cardRepository: CardRepository,
@@ -20,97 +25,51 @@ class CardRegistrator {
     this.cardRegistrationRepository = cardRegistrationRepository
   }
 
-  validateAndRegister (
-    conversator: CustomerConversator,
-    cardNumber: number
-  ): void {
-    this.cardRepository.findFull(cardNumber)
+  validateAndRegister (customerId: CustomerId, cardNumber: number): Promise<Array<Reaction>> {
+    return this.cardRepository.findFull(cardNumber)
       .then(Optional.ofNullable)
       .then(
         (optionalCard) => {
           if (!optionalCard.isPresent()) {
-            conversator.callback().sendText(
-              `Hmmm, ${cardNumber}?\nTo nie wygląda jak prawidłowy numer karty Beauty Zazero :(`
-            )
-            return
+            return Results.many(Reactions.plainText(StaticTexts.invalidCardNumber(cardNumber)))
           }
           const card: CardDbo = optionalCard.get()
           if (Optional.ofNullable(card.registration).isPresent()) {
-            conversator.callback().sendText(
-              'Niestety, ta karta została już aktywowana przez kogoś innego.'
-            )
-            return
+            return Results.many(Reactions.plainText(StaticTexts.cardActivatedByAnother(cardNumber)))
           }
           const validUntil: Instant = new Instant(card.agreement.validUntilEs)
           if (Instant.now().isAtOrAfter(validUntil)) {
-            conversator.callback().sendText('Niestety, ta karta jest nieważna.')
-            return
+            return Results.many(Reactions.plainText(StaticTexts.outdatedCard(cardNumber)))
           }
-          this.register(conversator, card)
-        }
-      )
-      .catch(
-        (error) => {
-          console.error(`while validating card ${cardNumber}`)
-          console.error(error)
+          return this.register(customerId, card)
         }
       )
   }
 
-  private register (conversator: CustomerConversator, card: CardDbo): void {
+  private register (customerId: CustomerId, card: CardDbo): Promise<Array<Reaction>> {
     const registration: CardRegistrationDbo = new CardRegistrationDbo()
     registration.card = card
-    registration.customerId = conversator.id().toRepresentation()
-    this.cardRegistrationRepository.save(registration)
-      .then(
-        () => {
-          CardRegistrator.promptActive(conversator, card)
-        }
-      )
-      .catch(
-        (error) => {
-          console.error(`while registering ${card.cardNumber} to ${conversator.id()}`)
-          console.error(error)
-          conversator.callback().sendText(
-            'Przepraszam, ale wystąpił błąd podczas rejestracji.\n'
-              + 'Skontaktuje się z Tobą nasz przedstawiciel.'
-          )
-        }
-      )
+    registration.customerId = customerId.toRepresentation()
+    return this.cardRegistrationRepository.save(registration)
+      .then(() => CardRegistrator.congratulate(card))
   }
 
-  private static promptActive (conversator: CustomerConversator, card: CardDbo): void {
-    conversator.callback().sendOptions(
-      {
-        topImage: Optional.of(StaticImageUrls.WELCOME),
-        title: `Karta od ${card.agreement.employerName} aktywowana!`,
-        subtitle: Optional.of(
-          'Pewnie chcesz wiedzieć co dalej?'
-        ),
-        buttons: [
-          {
-            command: {
-              type: 'ACTIVE_CUSTOMER_ACTION',
-              action: 'SHOW_TUTORIAL'
-            },
-            text: 'Jak użyć karty?'
-          },
-          {
-            command: {
-              type: 'ACTIVE_CUSTOMER_ACTION',
-              action: 'SHOW_SUBSCRIPTIONS'
-            },
-            text: 'Do jakich usług?'
-          },
-          {
-            command: {
-              type: 'ACTIVE_CUSTOMER_ACTION',
-              action: 'SHOW_PARTNERS'
-            },
-            text: 'W których salonach?'
-          }
-        ]
-      }
+  private static congratulate (card: CardDbo): Promise<Array<Reaction>> {
+    return Results.many(
+      Reactions.choice(
+        {
+          topImage: Optional.of(StaticImageUrls.WELCOME),
+          title: `Karta od ${card.agreement.employerName} aktywowana!`,
+          subtitle: Optional.of(
+            'Pewnie chcesz wiedzieć co dalej?'
+          ),
+          choices: [
+            Choices.inquiry(StaticTexts.showTutorial(), { type: 'SHOW_TUTORIAL' }),
+            Choices.inquiry(StaticTexts.showPartners(), { type: 'SHOW_PARTNERS' }),
+            Choices.inquiry(StaticTexts.showSubscriptions(), { type: 'SHOW_SUBSCRIPTIONS' }),
+          ]
+        }
+      )
     )
   }
 }

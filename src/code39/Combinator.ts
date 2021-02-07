@@ -66,7 +66,7 @@ class Combinator {
     return xs
   }
 
-  private static normalize <T> (ts: Array<Weighted<T>>): Array<Weighted<T>> {
+  private static normalize<T> (ts: Array<Weighted<T>>): Array<Weighted<T>> {
     const sum: number = ts.map((t) => t.weight)
       .reduce((left, right) => left + right)
     if (sum === 1.0) {
@@ -75,7 +75,7 @@ class Combinator {
     return ts.map((a) => Combinator.weight(a.element, a.weight / sum))
   }
 
-  private static byWeightDesc <T> (left: Weighted<T>, right: Weighted<T>): number {
+  private static byWeightDesc<T> (left: Weighted<T>, right: Weighted<T>): number {
     return right.weight - left.weight
   }
 

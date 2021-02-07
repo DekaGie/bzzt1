@@ -11,6 +11,15 @@ class CardRegistrationRepository extends Repository<CardRegistrationDbo> {
       .setParameters({ customerId })
       .getOne()
   }
+
+  deleteIfExists (customerId: string): Promise<boolean> {
+    return this.createQueryBuilder('registration')
+      .delete()
+      .where('registration.customerId = :customerId')
+      .setParameters({ customerId })
+      .execute()
+      .then((deleted) => deleted.affected > 0)
+  }
 }
 
 export default CardRegistrationRepository

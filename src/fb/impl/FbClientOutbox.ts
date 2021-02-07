@@ -10,8 +10,8 @@ class FbClientOutbox implements FbMessengerOutbox {
     this.fbClient = fbClient
   }
 
-  sendText (psid: string, text: string): void {
-    this.send(
+  sendText (psid: string, text: string): Promise<void> {
+    return this.send(
       psid,
       {
         text
@@ -19,9 +19,9 @@ class FbClientOutbox implements FbMessengerOutbox {
     )
   }
 
-  sendGenericTemplate (psid: string, generics: Array<FbGenericTemplate>): void {
+  sendGenericTemplate (psid: string, generics: Array<FbGenericTemplate>): Promise<void> {
     if (generics.length === 0) {
-      return
+      return Promise.resolve()
     }
     const squareRatio: Set<boolean> = new Set(
       generics.map(
@@ -29,10 +29,7 @@ class FbClientOutbox implements FbMessengerOutbox {
           .map((top) => top.squareRatio === true).orElse(false)
       )
     )
-    if (squareRatio.size > 1) {
-      throw new Error('cannot send generic templates of different ratios')
-    }
-    this.send(
+    return this.send(
       psid,
       {
         attachment: {
@@ -47,8 +44,8 @@ class FbClientOutbox implements FbMessengerOutbox {
     )
   }
 
-  private send (psid: string, message: object): void {
-    this.fbClient.send(psid, message).catch(
+  private send (psid: string, message: object): Promise<void> {
+    return this.fbClient.send(psid, message).catch(
       (error) => {
         console.error(`while sending to ${psid}: ${JSON.stringify(message)}`)
         console.error(error)

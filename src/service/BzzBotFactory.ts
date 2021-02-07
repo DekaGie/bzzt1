@@ -1,28 +1,48 @@
 import ServiceLocator from '../ServiceLocator'
 import Config from '../Config'
 import BzzBot from './BzzBot'
-import BzzCustomerCare from './BzzCustomerCare'
-import BarcodeParser from './BarcodeParser'
-import Decoder39 from '../code39/Decoder39'
-import OcrSpace from '../ocr/OcrSpace'
+import BusinessAssistant from './BusinessAssistant'
 import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import CardRepository from '../db/repo/CardRepository'
+import SalonRegistrationRepository from '../db/repo/SalonRegistrationRepository'
+import SalonCustomerAssistant from './SalonCustomerAssistant'
+import InactiveCustomerAssistant from './InactiveCustomerAssistant'
+import ActiveCustomerAssistant from './ActiveCustomerAssistant'
+import CardRegistrator from './CardRegistrator'
+import CustomerAssistant from './CustomerAssistant'
+import CustomerId from './domain/CustomerId'
+import AdminOverrideAssistant from './AdminOverrideAssistant'
+import SalonRegistrator from './SalonRegistrator'
 import SalonRepository from '../db/repo/SalonRepository'
-import SalonRegistrationRepository
-  from '../db/repo/SalonRegistrationRepository'
-import StateStore from './StateStore'
 
 class BzzBotFactory {
   static create (config: Config, locator: ServiceLocator) {
-    return new BzzBot(
-      new BzzCustomerCare(
-        locator.db.refer().getCustomRepository(CardRepository),
-        locator.db.refer().getCustomRepository(CardRegistrationRepository),
-        locator.db.refer().getCustomRepository(SalonRepository),
-        locator.db.refer().getCustomRepository(SalonRegistrationRepository),
-        new BarcodeParser(new Decoder39(), new OcrSpace(config.ocrSpaceApiKey))
+    const businessAssistant: CustomerAssistant<CustomerId> = new BusinessAssistant(
+      locator.db.refer().getCustomRepository(SalonRegistrationRepository),
+      locator.db.refer().getCustomRepository(CardRegistrationRepository),
+      new SalonCustomerAssistant(
+        locator.barcodes.refer(),
+        locator.db.refer().getCustomRepository(CardRepository)
       ),
-      new StateStore()
+      new ActiveCustomerAssistant(),
+      new InactiveCustomerAssistant(
+        locator.barcodes.refer(),
+        new CardRegistrator(
+          locator.db.refer().getCustomRepository(CardRepository),
+          locator.db.refer().getCustomRepository(CardRegistrationRepository)
+        ),
+        locator.states.refer()
+      )
+    )
+    return new BzzBot(
+      new AdminOverrideAssistant(
+        new SalonRegistrator(
+          locator.db.refer().getCustomRepository(SalonRepository),
+          locator.db.refer().getCustomRepository(SalonRegistrationRepository)
+        ),
+        locator.states.refer(),
+        businessAssistant
+      )
     )
   }
 }
