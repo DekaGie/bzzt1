@@ -55,7 +55,7 @@ Nie potrzebuję więcej zdjęć :)`
     return `Najlepiej zapytaj mnie najpierw o aktywne na Twojej karcie usługi.
 Następnie spytaj o salony, które akceptują kartę.
 Umów się na wizytę w dowolny sposób - nie musisz nawet wspominać o karcie.
-Po prostu przy płatności wyciągnij ją zamiast karty płatniczej :)'`
+Po prostu przy płatności wyciągnij ją zamiast karty płatniczej :)`
   }
 
   static onlineBooking (): string {

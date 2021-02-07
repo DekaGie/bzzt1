@@ -20,8 +20,9 @@ class AdminOverrideAssistant implements CustomerAssistant<CustomerId> {
 
   constructor (
     salonRegistrator: SalonRegistrator,
+    cardRegistrationRepository: CardRegistrationRepository,
     stateStore: StateStore,
-    underlying: CustomerAssistant<CustomerId>
+    underlying: CustomerAssistant<CustomerId>,
   ) {
     this.underlying = underlying
     this.salonRegistrator = salonRegistrator

@@ -40,6 +40,7 @@ class BzzBotFactory {
           locator.db.refer().getCustomRepository(SalonRepository),
           locator.db.refer().getCustomRepository(SalonRegistrationRepository)
         ),
+        locator.db.refer().getCustomRepository(CardRegistrationRepository),
         locator.states.refer(),
         businessAssistant
       )

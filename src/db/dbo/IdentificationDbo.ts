@@ -11,7 +11,7 @@ class IdentificationDbo {
   @OneToOne(
     () => CardRegistrationDbo,
     (registration) => registration.identification,
-    { nullable: false }
+    { nullable: false, onDelete: 'CASCADE' }
   )
   @JoinColumn(
     {
