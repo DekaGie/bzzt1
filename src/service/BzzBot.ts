@@ -15,7 +15,7 @@ import ImageInquiry from './spi/ImageInquiry'
 import Promises from '../util/Promises'
 import Reactions from './spi/Reactions'
 import Results from './Results'
-import StaticTexts from './StaticTexts'
+import GpTexts from './text/GpTexts'
 
 class BzzBot implements FbMessengerBot {
   private readonly actorAssistant: ActorAssistant<ActorId>
@@ -42,7 +42,7 @@ class BzzBot implements FbMessengerBot {
         (error) => {
           console.error(`while handling ${psid} inquiring ${JSON.stringify(inquiry)}`)
           console.error(error)
-          return Results.many(Reactions.plainText(StaticTexts.unexpectedError()))
+          return Results.many(Reactions.plainText(GpTexts.unexpectedError()))
         }
       )
       .then(

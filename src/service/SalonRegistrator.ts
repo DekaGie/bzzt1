@@ -6,6 +6,7 @@ import ActorId from './domain/ActorId'
 import Reaction from './spi/Reaction'
 import Reactions from './spi/Reactions'
 import Results from './Results'
+import UnregisteredTexts from './text/UnregisteredTexts'
 
 class SalonRegistrator {
   private readonly salonRepository: SalonRepository;
@@ -30,16 +31,16 @@ class SalonRegistrator {
       .then(
         (salon) => {
           if (!salon.isPresent()) {
-            return Results.many(Reactions.plainText(`Nie znam salonu "${salonName}".`))
+            return Results.many(Reactions.plainText(UnregisteredTexts.unknownSalon(salonName)))
           }
           if (salon.get().salonSecret !== salonSecret) {
-            return Results.many(Reactions.plainText(`Niestety, salon "${salonName}" ma hasło inne niż "${salonSecret}".`))
+            return Results.many(Reactions.plainText(UnregisteredTexts.invalidSalonSecret()))
           }
           const registration: SalonRegistrationDbo = new SalonRegistrationDbo()
           registration.salon = salon.get()
           registration.actorId = actorId.toRepresentation()
           return this.salonRegistrationRepository.save(registration).then(
-            () => Results.many(Reactions.plainText('Twoje konto od teraz powiązane jest z salonem i służy do skanowania kart klientek.'))
+            () => Results.many(Reactions.plainText(UnregisteredTexts.salonRegistrationSuccess()))
           )
         }
       )

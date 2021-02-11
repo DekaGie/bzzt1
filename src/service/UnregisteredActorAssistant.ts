@@ -12,11 +12,12 @@ import TextExtractions from './TextExtractions'
 import StateStore from './StateStore'
 import Reactions from './spi/Reactions'
 import Choices from './spi/Choices'
-import StaticTexts from './StaticTexts'
 import FreeTextInquiry from './spi/FreeTextInquiry'
 import ImageInquiry from './spi/ImageInquiry'
 import CardContextInquiry from './CardContextInquiry'
 import Results from './Results'
+import GpTexts from './text/GpTexts'
+import UnregisteredTexts from './text/UnregisteredTexts'
 
 class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
   private static readonly ASKED_FOR_ACTIVATE: StateCategoryId =
@@ -50,11 +51,11 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
           Reactions.choice(
             {
               topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
-              title: StaticTexts.unregisteredActorWelcome(),
-              subtitle: Optional.of(StaticTexts.unregisteredActorIntentPrompt()),
+              title: UnregisteredTexts.welcome(),
+              subtitle: Optional.of(UnregisteredTexts.intentPrompt()),
               choices: [
-                Choices.inquiry(StaticTexts.activateCard(), { type: 'PROMPT_ACTIVATE' }),
-                Choices.phone(StaticTexts.customerService(), '+48662097978')
+                Choices.inquiry(UnregisteredTexts.activateCard(), { type: 'PROMPT_ACTIVATE' }),
+                Choices.phone(GpTexts.customerService(), '+48662097978')
               ]
             }
           )
@@ -65,7 +66,7 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
         return this.barcodeParser.parse(imageInquiry.imageUrl).then(
           (cardNumber) => {
             if (!cardNumber.isPresent()) {
-              return Results.many(Reactions.plainText(StaticTexts.poorBarcodeImage()))
+              return Results.many(Reactions.plainText(GpTexts.poorBarcodeImage()))
             }
             return this.handleCardNumber(actorId, cardNumber.get())
           }
@@ -73,7 +74,7 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
       }
       case 'PROMPT_ACTIVATE': {
         this.stateStore.slot(actorId, UnregisteredActorAssistant.ASKED_FOR_ACTIVATE).set(true)
-        return Results.many(Reactions.plainText(StaticTexts.inputCardNumberPrompt()))
+        return Results.many(Reactions.plainText(UnregisteredTexts.inputCardNumberPrompt()))
       }
       case 'ACTIVATE': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
@@ -94,9 +95,9 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
       Reactions.choice(
         {
           topImage: Optional.empty(),
-          title: StaticTexts.ensureActivationPrompt(),
-          subtitle: Optional.of(StaticTexts.ensureActivationQuestion()),
-          choices: [Choices.inquiry(StaticTexts.yes(), { type: 'ACTIVATE', cardNumber })]
+          title: UnregisteredTexts.ensureActivationPrompt(),
+          subtitle: Optional.of(UnregisteredTexts.ensureActivationQuestion()),
+          choices: [Choices.inquiry(GpTexts.yes(), { type: 'ACTIVATE', cardNumber })]
         }
       )
     )

@@ -5,12 +5,13 @@ import StaticImageUrls from './StaticImageUrls'
 import Inquiry from './spi/Inquiry'
 import Reaction from './spi/Reaction'
 import Reactions from './spi/Reactions'
-import StaticTexts from './StaticTexts'
 import TextExtractions from './TextExtractions'
 import FreeTextInquiry from './spi/FreeTextInquiry'
 import CustomerIntent from './CustomerIntent'
 import Choices from './spi/Choices'
 import Results from './Results'
+import GpTexts from './text/GpTexts'
+import CustomerTexts from './text/CustomerTexts'
 
 class CustomerAssistant implements ActorAssistant<CardRegistrationDbo> {
   handle (registration: CardRegistrationDbo, inquiry: Inquiry): Promise<Array<Reaction>> {
@@ -26,7 +27,7 @@ class CustomerAssistant implements ActorAssistant<CardRegistrationDbo> {
       case 'IMAGE': {
         return Results.many(
           Reactions.plainText(
-            StaticTexts.alreadyActivated(
+            CustomerTexts.alreadyActivated(
               registration.card.cardNumber, registration.card.agreement.employerName
             )
           )
@@ -52,15 +53,15 @@ class CustomerAssistant implements ActorAssistant<CardRegistrationDbo> {
       Reactions.choice(
         {
           topImage: Optional.empty(),
-          title: StaticTexts.customerWelcome(
+          title: CustomerTexts.welcome(
             Optional.ofNullable(registration.identification)
               .map((identification) => identification.firstName)
           ),
-          subtitle: Optional.of(StaticTexts.customerIntentPrompt()),
+          subtitle: Optional.of(CustomerTexts.intentPrompt()),
           choices: [
-            Choices.inquiry(StaticTexts.showPartners(), { type: 'SHOW_PARTNERS' }),
-            Choices.inquiry(StaticTexts.showSubscriptions(), { type: 'SHOW_SUBSCRIPTIONS' }),
-            Choices.phone(StaticTexts.customerService(), '+48662097978')
+            Choices.inquiry(CustomerTexts.showPartners(), { type: 'SHOW_PARTNERS' }),
+            Choices.inquiry(CustomerTexts.showSubscriptions(), { type: 'SHOW_SUBSCRIPTIONS' }),
+            Choices.phone(GpTexts.customerService(), '+48662097978')
           ]
         }
       )
@@ -71,8 +72,8 @@ class CustomerAssistant implements ActorAssistant<CardRegistrationDbo> {
     switch (intent) {
       case CustomerIntent.SHOW_TUTORIAL: {
         return Results.many<Reaction>(
-          Reactions.image(StaticImageUrls.ACCEPTED_SIGN, StaticTexts.signCaption()),
-          Reactions.plainText(StaticTexts.tutorial())
+          Reactions.image(StaticImageUrls.ACCEPTED_SIGN, CustomerTexts.signCaption()),
+          Reactions.plainText(CustomerTexts.tutorial())
         )
       }
       case CustomerIntent.SHOW_PARTNERS: {
@@ -84,8 +85,8 @@ class CustomerAssistant implements ActorAssistant<CardRegistrationDbo> {
               title: 'Power Brows',
               subtitle: Optional.of('Brwi: wszystko. Rzęsy: Laminacja, Henna.'),
               choices: [
-                Choices.link(StaticTexts.onlineBooking(), 'https://www.moment.pl/power-brows'),
-                Choices.phone(StaticTexts.phoneBooking(), '+48736842624')
+                Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/power-brows'),
+                Choices.phone(CustomerTexts.phoneBooking(), '+48736842624')
               ]
             }
           ),
@@ -95,8 +96,8 @@ class CustomerAssistant implements ActorAssistant<CardRegistrationDbo> {
               title: 'Ginger Zone',
               subtitle: Optional.of('Rzęsy: Przedłużanie 1:1, Laminacja, Henna. Brwi: wszystko.'),
               choices: [
-                Choices.link(StaticTexts.onlineBooking(), 'https://www.moment.pl/martyna-krawczyk-beauty'),
-                Choices.phone(StaticTexts.phoneBooking(), '+48691120992')
+                Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/martyna-krawczyk-beauty'),
+                Choices.phone(CustomerTexts.phoneBooking(), '+48691120992')
               ]
             }
           )

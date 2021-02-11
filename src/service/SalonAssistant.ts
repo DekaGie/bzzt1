@@ -11,7 +11,6 @@ import Reaction from './spi/Reaction'
 import Inquiry from './spi/Inquiry'
 import FreeTextInquiry from './spi/FreeTextInquiry'
 import Reactions from './spi/Reactions'
-import StaticTexts from './StaticTexts'
 import ImageInquiry from './spi/ImageInquiry'
 import CardDbo from '../db/dbo/CardDbo'
 import Choices from './spi/Choices'
@@ -23,6 +22,8 @@ import ActorId from './domain/ActorId'
 import StateCategoryId from './domain/StateCategoryId'
 import StateSlot from './StateSlot'
 import Promises from '../util/Promises'
+import GpTexts from './text/GpTexts'
+import SalonTexts from './text/SalonTexts'
 
 class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
   private static readonly SHOULD_SEND_PICTURE_FOR_CARD: StateCategoryId =
@@ -54,7 +55,7 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
         const freeTextInquiry: FreeTextInquiry = inquiry as FreeTextInquiry
         const cardNumber: Optional<number> = TextExtractions.cardNumber(freeTextInquiry.freeText)
         if (!cardNumber.isPresent()) {
-          return Results.many(Reactions.plainText(StaticTexts.salonOnlyChecksCards()))
+          return Results.many(Reactions.plainText(SalonTexts.onlyCardChecking()))
         }
         return this.handleCardNumber(salon, cardNumber.get())
       }
@@ -67,7 +68,7 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
         return this.barcodeParser.parse(imageInquiry.imageUrl).then(
           (cardNumber) => {
             if (!cardNumber.isPresent()) {
-              return Results.many(Reactions.plainText(StaticTexts.poorBarcodeImage()))
+              return Results.many(Reactions.plainText(GpTexts.poorBarcodeImage()))
             }
             return this.handleCardNumber(salon, cardNumber.get())
           }
@@ -101,7 +102,7 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
       .then(
         (card) => {
           if (!card.isPresent()) {
-            return Results.many(Reactions.plainText(StaticTexts.salonInvalidCardNumber(cardNumber)))
+            return Results.many(Reactions.plainText(SalonTexts.invalidCardNumber(cardNumber)))
           }
           return this.handleCard(salon, card.get())
         }
@@ -111,11 +112,11 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
   private handleCard (salon: SalonRegistrationDbo, card: CardDbo): Promise<Array<Reaction>> {
     const validUntil: Instant = new Instant(card.agreement.validUntilEs)
     if (Instant.now().isAtOrAfter(validUntil)) {
-      return Results.many(Reactions.plainText(StaticTexts.salonOutdatedCard(card.cardNumber)))
+      return Results.many(Reactions.plainText(SalonTexts.outdatedCard(card.cardNumber)))
     }
     const registration: Optional<CardRegistrationDbo> = Optional.ofNullable(card.registration)
     if (!registration.isPresent()) {
-      return Results.many(Reactions.plainText(StaticTexts.notYetActivatedCard(card.cardNumber)))
+      return Results.many(Reactions.plainText(SalonTexts.notYetActivatedCard(card.cardNumber)))
     }
     const identification: Optional<IdentificationDbo> = Optional.ofNullable(registration.get().identification)
     if (!identification.isPresent()) {
@@ -132,14 +133,14 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
         {
           topImage: pictureUrl,
           title: fullName,
-          subtitle: Optional.of(StaticTexts.pictureVerificationQuestion()),
+          subtitle: Optional.of(SalonTexts.pictureVerificationQuestion()),
           choices: [
             Choices.inquiry(
-              StaticTexts.yes(),
+              GpTexts.yes(),
               { type: 'ID_VERIFICATION_SUCCESS', cardNumber: card.cardNumber }
             ),
             Choices.inquiry(
-              StaticTexts.no(),
+              GpTexts.no(),
               { type: 'ID_VERIFICATION_FAILURE', cardNumber: card.cardNumber }
             )
           ]
@@ -154,14 +155,14 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
         {
           topImage: Optional.empty(),
           title: fullName,
-          subtitle: Optional.of(StaticTexts.missingPictureQuestion()),
+          subtitle: Optional.of(SalonTexts.missingPictureQuestion()),
           choices: [
             Choices.inquiry(
-              StaticTexts.pictureConsented(true),
+              SalonTexts.pictureConsented(true),
               { type: 'PICTURE_CONSENTED', cardNumber }
             ),
             Choices.inquiry(
-              StaticTexts.pictureConsented(false),
+              SalonTexts.pictureConsented(false),
               { type: 'PICTURE_NOT_CONSENTED', cardNumber }
             )
           ]
@@ -172,7 +173,7 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
 
   private promptForPicture (salon: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
     this.pictureAwaitingCardNumber(salon).set(cardNumber)
-    return Results.many(Reactions.plainText(StaticTexts.takePicturePrompt()))
+    return Results.many(Reactions.plainText(SalonTexts.takePicturePrompt()))
   }
 
   private handlePictureFor (
@@ -182,14 +183,14 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
     console.log(`Received picture for ${cardNumber}: ${pictureUrl.asString()}`)
     this.pictureAwaitingCardNumber(salon).clear()
     return Promises.flatAll(
-      Results.many(Reactions.plainText(StaticTexts.thanksForCustomerPicture())),
+      Results.many(Reactions.plainText(SalonTexts.thanksForCustomerPicture())),
       this.promptForIdVerification(cardNumber)
     )
   }
 
   private handleFailedPictureFor (salon: SalonRegistrationDbo): Promise<Array<Reaction>> {
     this.pictureAwaitingCardNumber(salon).clear()
-    return Results.many(Reactions.plainText(StaticTexts.customerPictureUpdateAborted()))
+    return Results.many(Reactions.plainText(SalonTexts.customerPictureUpdateAborted()))
   }
 
   private promptForIdVerification (cardNumber: number): Promise<Array<Reaction>> {
@@ -201,15 +202,15 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
           return Reactions.choice(
             {
               topImage: Optional.empty(),
-              title: StaticTexts.idVerificationPrompt(),
-              subtitle: Optional.of(StaticTexts.idVerificationQuestion(fullName)),
+              title: SalonTexts.idVerificationPrompt(),
+              subtitle: Optional.of(SalonTexts.idVerificationQuestion(fullName)),
               choices: [
                 Choices.inquiry(
-                  StaticTexts.yes(),
+                  GpTexts.yes(),
                   { type: 'ID_VERIFICATION_SUCCESS', cardNumber }
                 ),
                 Choices.inquiry(
-                  StaticTexts.no(),
+                  GpTexts.no(),
                   { type: 'ID_VERIFICATION_FAILURE', cardNumber }
                 )
               ]
@@ -230,13 +231,13 @@ class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
   private handleVerified (salon: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
     // TODO: uslugi
     console.log(`Salon ${salon.salon.salonName} akceptuje ${cardNumber}`)
-    return Results.many(Reactions.plainText(StaticTexts.acceptCard()))
+    return Results.many(Reactions.plainText(SalonTexts.acceptCard()))
   }
 
   private handleVerificationFailure (salon: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
     // TODO: mail
     console.log(`Salon ${salon.salon.salonName} nie akceptuje ${cardNumber}`)
-    return Results.many(Reactions.plainText(StaticTexts.rejectCard()))
+    return Results.many(Reactions.plainText(SalonTexts.rejectCard()))
   }
 }
 

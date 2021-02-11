@@ -8,9 +8,10 @@ import StaticImageUrls from './StaticImageUrls'
 import Reaction from './spi/Reaction'
 import ActorId from './domain/ActorId'
 import Reactions from './spi/Reactions'
-import StaticTexts from './StaticTexts'
 import Results from './Results'
 import Choices from './spi/Choices'
+import UnregisteredTexts from './text/UnregisteredTexts'
+import CustomerTexts from './text/CustomerTexts'
 
 class CardRegistrator {
   private readonly cardRepository: CardRepository;
@@ -31,15 +32,15 @@ class CardRegistrator {
       .then(
         (optionalCard) => {
           if (!optionalCard.isPresent()) {
-            return Results.many(Reactions.plainText(StaticTexts.invalidCardNumber(cardNumber)))
+            return Results.many(Reactions.plainText(UnregisteredTexts.invalidCardNumber(cardNumber)))
           }
           const card: CardDbo = optionalCard.get()
           if (Optional.ofNullable(card.registration).isPresent()) {
-            return Results.many(Reactions.plainText(StaticTexts.cardActivatedByAnother(cardNumber)))
+            return Results.many(Reactions.plainText(UnregisteredTexts.cardActivatedByAnother(cardNumber)))
           }
           const validUntil: Instant = new Instant(card.agreement.validUntilEs)
           if (Instant.now().isAtOrAfter(validUntil)) {
-            return Results.many(Reactions.plainText(StaticTexts.outdatedCard(cardNumber)))
+            return Results.many(Reactions.plainText(UnregisteredTexts.outdatedCard(cardNumber)))
           }
           return this.register(actorId, card)
         }
@@ -59,14 +60,12 @@ class CardRegistrator {
       Reactions.choice(
         {
           topImage: Optional.of(StaticImageUrls.WELCOME),
-          title: `Karta od ${card.agreement.employerName} aktywowana!`,
-          subtitle: Optional.of(
-            'Pewnie chcesz wiedzieć co dalej?'
-          ),
+          title: UnregisteredTexts.activationSuccess(card.agreement.employerName),
+          subtitle: Optional.of(UnregisteredTexts.whatNext()),
           choices: [
-            Choices.inquiry(StaticTexts.showTutorial(), { type: 'SHOW_TUTORIAL' }),
-            Choices.inquiry(StaticTexts.showPartners(), { type: 'SHOW_PARTNERS' }),
-            Choices.inquiry(StaticTexts.showSubscriptions(), { type: 'SHOW_SUBSCRIPTIONS' }),
+            Choices.inquiry(CustomerTexts.showTutorial(), { type: 'SHOW_TUTORIAL' }),
+            Choices.inquiry(CustomerTexts.showPartners(), { type: 'SHOW_PARTNERS' }),
+            Choices.inquiry(CustomerTexts.showSubscriptions(), { type: 'SHOW_SUBSCRIPTIONS' }),
           ]
         }
       )
