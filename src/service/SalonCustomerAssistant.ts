@@ -22,6 +22,7 @@ import StateStore from './StateStore'
 import CustomerId from './domain/CustomerId'
 import StateCategoryId from './domain/StateCategoryId'
 import StateSlot from './StateSlot'
+import Promises from '../util/Promises'
 
 class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> {
   private static readonly SHOULD_SEND_PICTURE_FOR_CARD: StateCategoryId =
@@ -46,6 +47,10 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
   handle (customer: SalonRegistrationDbo, inquiry: Inquiry): Promise<Array<Reaction>> {
     switch (inquiry.type) {
       case 'FREE_TEXT': {
+        const pictureForCardNumber: Optional<number> = this.pictureAwaitingCardNumber(customer).get()
+        if (pictureForCardNumber.isPresent()) {
+          return this.handleFailedPictureFor(customer)
+        }
         const freeTextInquiry: FreeTextInquiry = inquiry as FreeTextInquiry
         const cardNumber: Optional<number> = TextExtractions.cardNumber(freeTextInquiry.freeText)
         if (!cardNumber.isPresent()) {
@@ -74,11 +79,15 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
       }
       case 'PICTURE_NOT_CONSENTED': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
-        return Results.many(this.promptForIdVerification(cardInquiry.cardNumber))
+        return this.promptForIdVerification(cardInquiry.cardNumber)
       }
       case 'ID_VERIFICATION_SUCCESS': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
         return this.handleVerified(customer, cardInquiry.cardNumber)
+      }
+      case 'ID_VERIFICATION_FAILURE': {
+        const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
+        return this.handleVerificationFailure(customer, cardInquiry.cardNumber)
       }
       default: {
         return Results.many()
@@ -131,7 +140,7 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
             ),
             Choices.inquiry(
               StaticTexts.no(),
-              { type: 'ID_VERIFICATION_FAILURE' }
+              { type: 'ID_VERIFICATION_FAILURE', cardNumber: card.cardNumber }
             )
           ]
         }
@@ -170,31 +179,44 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
     customer: SalonRegistrationDbo, cardNumber: number, pictureUrl: ImageUrl
   ): Promise<Array<Reaction>> {
     // TODO: mail
-    console.log(`Received picture for ${cardNumber}: ${pictureUrl}`)
+    console.log(`Received picture for ${cardNumber}: ${pictureUrl.asString()}`)
     this.pictureAwaitingCardNumber(customer).clear()
-    return Results.many(
-      Reactions.plainText(StaticTexts.thanksForCustomerPicture()),
+    return Promises.flatAll(
+      Results.many(Reactions.plainText(StaticTexts.thanksForCustomerPicture())),
       this.promptForIdVerification(cardNumber)
     )
   }
 
-  private promptForIdVerification (cardNumber: number): Reaction {
-    return Reactions.choice(
-      {
-        topImage: Optional.empty(),
-        title: StaticTexts.idVerificationPrompt(),
-        subtitle: Optional.of(StaticTexts.idVerificationQuestion()),
-        choices: [
-          Choices.inquiry(
-            StaticTexts.yes(),
-            { type: 'ID_VERIFICATION_SUCCESS', cardNumber }
-          ),
-          Choices.inquiry(
-            StaticTexts.no(),
-            { type: 'ID_VERIFICATION_FAILURE' }
+  private handleFailedPictureFor (customer: SalonRegistrationDbo): Promise<Array<Reaction>> {
+    this.pictureAwaitingCardNumber(customer).clear()
+    return Results.many(Reactions.plainText(StaticTexts.customerPictureUpdateAborted()))
+  }
+
+  private promptForIdVerification (cardNumber: number): Promise<Array<Reaction>> {
+    return Results.many(
+      this.cardRepository.findFull(cardNumber).then(
+        (card) => {
+          const { identification } = card.registration
+          const fullName: string = `${identification.firstName} ${identification.lastName}`
+          return Reactions.choice(
+            {
+              topImage: Optional.empty(),
+              title: StaticTexts.idVerificationPrompt(),
+              subtitle: Optional.of(StaticTexts.idVerificationQuestion(fullName)),
+              choices: [
+                Choices.inquiry(
+                  StaticTexts.yes(),
+                  { type: 'ID_VERIFICATION_SUCCESS', cardNumber }
+                ),
+                Choices.inquiry(
+                  StaticTexts.no(),
+                  { type: 'ID_VERIFICATION_FAILURE' }
+                )
+              ]
+            }
           )
-        ]
-      }
+        }
+      )
     )
   }
 
@@ -209,6 +231,12 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
     // TODO: uslugi
     console.log(`Salon ${customer.salon.salonName} akceptuje ${cardNumber}`)
     return Results.many(Reactions.plainText(StaticTexts.acceptCard()))
+  }
+
+  private handleVerificationFailure (customer: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
+    // TODO: mail
+    console.log(`Salon ${customer.salon.salonName} nie akceptuje ${cardNumber}`)
+    return Results.many(Reactions.plainText(StaticTexts.rejectCard()))
   }
 }
 

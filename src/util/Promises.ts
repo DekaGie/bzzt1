@@ -20,6 +20,10 @@ class Promises {
       Promise.resolve()
     )
   }
+
+  static flatAll<T> (left: Promise<Array<T>>, right: Promise<Array<T>>): Promise<Array<T>> {
+    return left.then((leftArray) => right.then((rightArray) => leftArray.concat(rightArray)))
+  }
 }
 
 export default Promises

@@ -137,8 +137,8 @@ Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
     return 'Poproś o dowód osobisty'
   }
 
-  static idVerificationQuestion (): string {
-    return 'Czy imię i nazwisko się zgadza?'
+  static idVerificationQuestion (fullName: string): string {
+    return `Czy to ${fullName}?`
   }
 
   static pictureVerificationQuestion (): string {
@@ -155,6 +155,14 @@ Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
 
   static acceptCard (): string {
     return 'Akceptuj kartę na usługi: regulacja brwi, henna brwi, laminacja brwi, depilacja wąsika, laminacja rzęs, henna rzęs, przedłużanie rzęs 1:1. Zapisz w versum, że użyta była karta Beauty ZAZERO.'
+  }
+
+  static customerPictureUpdateAborted (): string {
+    return 'Oczekiwałem zdjęcia klientki. Przerywam proces weryfikacji, w razie potrzeby zacznij go od początku, skanując kartę klientki.'
+  }
+
+  static rejectCard (): string {
+    return 'Nie akceptuj karty! Operator został powiadomiony o próbie nadużycia ze strony klientki.'
   }
 }
 
