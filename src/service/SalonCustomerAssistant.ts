@@ -17,18 +17,30 @@ import CardDbo from '../db/dbo/CardDbo'
 import Choices from './spi/Choices'
 import TextExtractions from './TextExtractions'
 import Results from './Results'
+import CardContextInquiry from './CardContextInquiry'
+import StateStore from './StateStore'
+import CustomerId from './domain/CustomerId'
+import StateCategoryId from './domain/StateCategoryId'
+import StateSlot from './StateSlot'
 
 class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> {
+  private static readonly SHOULD_SEND_PICTURE_FOR_CARD: StateCategoryId =
+    new StateCategoryId(SalonCustomerAssistant.name, 'SHOULD_SEND_PICTURE_FOR_CARD');
+
   private readonly barcodeParser: BarcodeParser;
 
   private readonly cardRepository: CardRepository;
 
+  private readonly stateStore: StateStore;
+
   constructor (
     barcodeParser: BarcodeParser,
-    cardRepository: CardRepository
+    cardRepository: CardRepository,
+    stateStore: StateStore
   ) {
     this.barcodeParser = barcodeParser
     this.cardRepository = cardRepository
+    this.stateStore = stateStore
   }
 
   handle (customer: SalonRegistrationDbo, inquiry: Inquiry): Promise<Array<Reaction>> {
@@ -37,56 +49,68 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
         const freeTextInquiry: FreeTextInquiry = inquiry as FreeTextInquiry
         const cardNumber: Optional<number> = TextExtractions.cardNumber(freeTextInquiry.freeText)
         if (!cardNumber.isPresent()) {
-          return Promise.resolve([Reactions.plainText(StaticTexts.salonOnlyChecksCards())])
+          return Results.many(Reactions.plainText(StaticTexts.salonOnlyChecksCards()))
         }
-        return this.handleCardNumber(cardNumber.get())
+        return this.handleCardNumber(customer, cardNumber.get())
       }
       case 'IMAGE': {
         const imageInquiry: ImageInquiry = inquiry as ImageInquiry
+        const pictureForCardNumber: Optional<number> = this.pictureAwaitingCardNumber(customer).get()
+        if (pictureForCardNumber.isPresent()) {
+          return this.handlePictureFor(customer, pictureForCardNumber.get(), imageInquiry.imageUrl)
+        }
         return this.barcodeParser.parse(imageInquiry.imageUrl).then(
           (cardNumber) => {
             if (!cardNumber.isPresent()) {
-              return Promise.resolve([Reactions.plainText(StaticTexts.poorBarcodeImage())])
+              return Results.many(Reactions.plainText(StaticTexts.poorBarcodeImage()))
             }
-            return this.handleCardNumber(cardNumber.get())
+            return this.handleCardNumber(customer, cardNumber.get())
           }
         )
       }
-      case 'PICTURE_CONSENTED':
-      case 'PICTURE_NOT_CONSENTED':
-      default:
-        return Promise.resolve([])
+      case 'PICTURE_CONSENTED': {
+        const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
+        return this.promptForPicture(customer, cardInquiry.cardNumber)
+      }
+      case 'PICTURE_NOT_CONSENTED': {
+        const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
+        return Results.many(this.promptForIdVerification(cardInquiry.cardNumber))
+      }
+      case 'ID_VERIFICATION_SUCCESS': {
+        const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
+        return this.handleVerified(customer, cardInquiry.cardNumber)
+      }
+      default: {
+        return Results.many()
+      }
     }
   }
 
-  private handleCardNumber (cardNumber: number): Promise<Array<Reaction>> {
+  private handleCardNumber (customer: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
     return this.cardRepository.findFull(cardNumber)
       .then(Optional.ofNullable)
       .then(
         (card) => {
           if (!card.isPresent()) {
-            return Promise.resolve([Reactions.plainText(StaticTexts.salonInvalidCardNumber(cardNumber))])
+            return Results.many(Reactions.plainText(StaticTexts.salonInvalidCardNumber(cardNumber)))
           }
-          return this.handleCard(card.get())
+          return this.handleCard(customer, card.get())
         }
       )
   }
 
-  private handleCard (card: CardDbo): Promise<Array<Reaction>> {
+  private handleCard (customer: SalonRegistrationDbo, card: CardDbo): Promise<Array<Reaction>> {
     const validUntil: Instant = new Instant(card.agreement.validUntilEs)
     if (Instant.now().isAtOrAfter(validUntil)) {
-      return Promise.resolve([Reactions.plainText(StaticTexts.salonOutdatedCard(card.cardNumber))])
+      return Results.many(Reactions.plainText(StaticTexts.salonOutdatedCard(card.cardNumber)))
     }
     const registration: Optional<CardRegistrationDbo> = Optional.ofNullable(card.registration)
     if (!registration.isPresent()) {
-      return Promise.resolve([Reactions.plainText(StaticTexts.notYetActivatedCard(card.cardNumber))])
+      return Results.many(Reactions.plainText(StaticTexts.notYetActivatedCard(card.cardNumber)))
     }
     const identification: Optional<IdentificationDbo> = Optional.ofNullable(registration.get().identification)
-    // TODO: uslugi
-    // eslint-disable-next-line max-len
-    const act: string = 'akceptuj kartę na usługi: regulacja brwi, henna brwi, laminacja brwi, depilacja wąsika, laminacja rzęs, henna rzęs, przedłużanie rzęs 1:1. Zapisz w versum, że użyta była karta Beauty ZAZERO.'
     if (!identification.isPresent()) {
-      return Promise.resolve([Reactions.plainText(`Śmiało ${act}`)])
+      return this.handleVerified(customer, card.cardNumber)
     }
     const fullName: string = `${identification.get().firstName} ${identification.get().lastName}`
     const pictureUrl: Optional<ImageUrl> = Optional.ofNullable(identification.get().pictureUrl)
@@ -94,9 +118,24 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
     if (!pictureUrl.isPresent()) {
       return this.handleNoPicture(card.cardNumber, fullName)
     }
-    return Results.many<Reaction>(
-      Reactions.image(pictureUrl.get(), fullName),
-      Reactions.plainText(`Zweryfikuj tożsamość zdjęciem lub dowodem osobistym i ${act}`)
+    return Results.many(
+      Reactions.choice(
+        {
+          topImage: pictureUrl,
+          title: fullName,
+          subtitle: Optional.of(StaticTexts.pictureVerificationQuestion()),
+          choices: [
+            Choices.inquiry(
+              StaticTexts.yes(),
+              { type: 'ID_VERIFICATION_SUCCESS', cardNumber: card.cardNumber }
+            ),
+            Choices.inquiry(
+              StaticTexts.no(),
+              { type: 'ID_VERIFICATION_FAILURE' }
+            )
+          ]
+        }
+      )
     )
   }
 
@@ -120,6 +159,56 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
         }
       )
     )
+  }
+
+  private promptForPicture (customer: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
+    this.pictureAwaitingCardNumber(customer).set(cardNumber)
+    return Results.many(Reactions.plainText(StaticTexts.takePicturePrompt()))
+  }
+
+  private handlePictureFor (
+    customer: SalonRegistrationDbo, cardNumber: number, pictureUrl: ImageUrl
+  ): Promise<Array<Reaction>> {
+    // TODO: mail
+    console.log(`Received picture for ${cardNumber}: ${pictureUrl}`)
+    this.pictureAwaitingCardNumber(customer).clear()
+    return Results.many(
+      Reactions.plainText(StaticTexts.thanksForCustomerPicture()),
+      this.promptForIdVerification(cardNumber)
+    )
+  }
+
+  private promptForIdVerification (cardNumber: number): Reaction {
+    return Reactions.choice(
+      {
+        topImage: Optional.empty(),
+        title: StaticTexts.idVerificationPrompt(),
+        subtitle: Optional.of(StaticTexts.idVerificationQuestion()),
+        choices: [
+          Choices.inquiry(
+            StaticTexts.yes(),
+            { type: 'ID_VERIFICATION_SUCCESS', cardNumber }
+          ),
+          Choices.inquiry(
+            StaticTexts.no(),
+            { type: 'ID_VERIFICATION_FAILURE' }
+          )
+        ]
+      }
+    )
+  }
+
+  private pictureAwaitingCardNumber (customer: SalonRegistrationDbo): StateSlot<number> {
+    return this.stateStore.slot(
+      new CustomerId(customer.customerId),
+      SalonCustomerAssistant.SHOULD_SEND_PICTURE_FOR_CARD
+    )
+  }
+
+  private handleVerified (customer: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
+    // TODO: uslugi
+    console.log(`Salon ${customer.salon.salonName} akceptuje ${cardNumber}`)
+    return Results.many(Reactions.plainText(StaticTexts.acceptCard()))
   }
 }
 

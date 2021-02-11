@@ -15,18 +15,8 @@ class StateSlot<T> {
     this.value = Optional.empty()
   }
 
-  get (): T {
-    return this.value.orElseThrow(() => new Error('not set'))
-  }
-
-  isSet (): boolean {
-    return this.value.isPresent()
-  }
-
-  defaultTo (value: T): void {
-    if (!this.value.isPresent()) {
-      this.value = Optional.of(value)
-    }
+  get (): Optional<T> {
+    return this.value
   }
 }
 

@@ -16,6 +16,7 @@ import StaticTexts from './StaticTexts'
 import FreeTextInquiry from './spi/FreeTextInquiry'
 import ImageInquiry from './spi/ImageInquiry'
 import CardContextInquiry from './CardContextInquiry'
+import Results from './Results'
 
 class InactiveCustomerAssistant implements CustomerAssistant<CustomerId> {
   private static readonly ASKED_FOR_ACTIVATE: StateCategoryId =
@@ -45,20 +46,18 @@ class InactiveCustomerAssistant implements CustomerAssistant<CustomerId> {
         if (cardNumber.isPresent()) {
           return this.handleCardNumber(customerId, cardNumber.get())
         }
-        return Promise.resolve(
-          [
-            Reactions.choice(
-              {
-                topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
-                title: StaticTexts.inactiveCustomerWelcome(),
-                subtitle: Optional.of(StaticTexts.inactiveCustomerIntentPrompt()),
-                choices: [
-                  Choices.inquiry(StaticTexts.activateCard(), { type: 'PROMPT_ACTIVATE' }),
-                  Choices.phone(StaticTexts.customerService(), '+48662097978')
-                ]
-              }
-            )
-          ]
+        return Results.many(
+          Reactions.choice(
+            {
+              topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
+              title: StaticTexts.inactiveCustomerWelcome(),
+              subtitle: Optional.of(StaticTexts.inactiveCustomerIntentPrompt()),
+              choices: [
+                Choices.inquiry(StaticTexts.activateCard(), { type: 'PROMPT_ACTIVATE' }),
+                Choices.phone(StaticTexts.customerService(), '+48662097978')
+              ]
+            }
+          )
         )
       }
       case 'IMAGE': {
@@ -66,7 +65,7 @@ class InactiveCustomerAssistant implements CustomerAssistant<CustomerId> {
         return this.barcodeParser.parse(imageInquiry.imageUrl).then(
           (cardNumber) => {
             if (!cardNumber.isPresent()) {
-              return [Reactions.plainText(StaticTexts.poorBarcodeImage())]
+              return Results.many(Reactions.plainText(StaticTexts.poorBarcodeImage()))
             }
             return this.handleCardNumber(customerId, cardNumber.get())
           }
@@ -74,35 +73,32 @@ class InactiveCustomerAssistant implements CustomerAssistant<CustomerId> {
       }
       case 'PROMPT_ACTIVATE': {
         this.stateStore.slot(customerId, InactiveCustomerAssistant.ASKED_FOR_ACTIVATE).set(true)
-        return Promise.resolve([Reactions.plainText(StaticTexts.inputCardNumberPrompt())])
+        return Results.many(Reactions.plainText(StaticTexts.inputCardNumberPrompt()))
       }
       case 'ACTIVATE': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
         return this.cardRegistrator.validateAndRegister(customerId, cardInquiry.cardNumber)
       }
       default: {
-        return Promise.resolve([])
+        return Results.many()
       }
     }
   }
 
   handleCardNumber (customerId: CustomerId, cardNumber: number): Promise<Array<Reaction>> {
     const asked: StateSlot<Boolean> = this.stateStore.slot(customerId, InactiveCustomerAssistant.ASKED_FOR_ACTIVATE)
-    asked.defaultTo(false)
-    if (asked.get()) {
+    if (asked.get().orElse(false)) {
       return this.cardRegistrator.validateAndRegister(customerId, cardNumber)
     }
-    return Promise.resolve(
-      [
-        Reactions.choice(
-          {
-            topImage: Optional.empty(),
-            title: 'Ooo, to karta Beauty Zazero!',
-            subtitle: Optional.of('Chcesz ją aktywować?'),
-            choices: [Choices.inquiry(StaticTexts.yes(), { type: 'ACTIVATE', cardNumber })]
-          }
-        )
-      ]
+    return Results.many(
+      Reactions.choice(
+        {
+          topImage: Optional.empty(),
+          title: StaticTexts.ensureActivationPrompt(),
+          subtitle: Optional.of(StaticTexts.ensureActivationQuestion()),
+          choices: [Choices.inquiry(StaticTexts.yes(), { type: 'ACTIVATE', cardNumber })]
+        }
+      )
     )
   }
 }

@@ -22,7 +22,8 @@ class BzzBotFactory {
       locator.db.refer().getCustomRepository(CardRegistrationRepository),
       new SalonCustomerAssistant(
         locator.barcodes.refer(),
-        locator.db.refer().getCustomRepository(CardRepository)
+        locator.db.refer().getCustomRepository(CardRepository),
+        locator.states.refer()
       ),
       new ActiveCustomerAssistant(),
       new InactiveCustomerAssistant(

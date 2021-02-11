@@ -30,6 +30,10 @@ Zanim ją zaakceptujesz, poproś by klientka zagadała do bota i aktywowała kar
     return 'Nie mamy zdjęcia. Możemy je zrobić?'
   }
 
+  static takePicturePrompt (): string {
+    return 'Zrób zdjęcie, pionowo lub poziomo, ale tak by twarz klientki znajdowała się dokładnie na środku kadru.'
+  }
+
   static pictureConsented (yes: boolean): string {
     return yes ? 'Klientka pozwala :)' : 'Nie teraz...'
   }
@@ -94,6 +98,10 @@ Po prostu przy płatności wyciągnij ją zamiast karty płatniczej :)`
     return 'Tak!'
   }
 
+  static no (): string {
+    return 'Nie :('
+  }
+
   static inputCardNumberPrompt (): string {
     return `Dobrze :)
 W takim razie zrób zdjęcie swojej karty Beauty Zazero lub podaj mi jej numer.`
@@ -118,6 +126,35 @@ W takim razie zrób zdjęcie swojej karty Beauty Zazero lub podaj mi jej numer.`
   static unexpectedError (): string {
     return `Przepraszamy, wystąpił niespodziewany błąd po stronie systemu Beauty Zazero.
 Jeśli to pilne, skontaktuj się z obsługą klienta: +48 662 097 978`
+  }
+
+  static thanksForCustomerPicture (): string {
+    return `Dzięki :)
+Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
+  }
+
+  static idVerificationPrompt (): string {
+    return 'Poproś o dowód osobisty'
+  }
+
+  static idVerificationQuestion (): string {
+    return 'Czy imię i nazwisko się zgadza?'
+  }
+
+  static pictureVerificationQuestion (): string {
+    return 'Czy to ta klientka?'
+  }
+
+  static ensureActivationPrompt (): string {
+    return 'Ooo, to karta Beauty Zazero!'
+  }
+
+  static ensureActivationQuestion (): string {
+    return 'Chcesz ją aktywować?'
+  }
+
+  static acceptCard (): string {
+    return 'Akceptuj kartę na usługi: regulacja brwi, henna brwi, laminacja brwi, depilacja wąsika, laminacja rzęs, henna rzęs, przedłużanie rzęs 1:1. Zapisz w versum, że użyta była karta Beauty ZAZERO.'
   }
 }
 
