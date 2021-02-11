@@ -2,7 +2,7 @@ import { Optional } from 'typescript-optional'
 import SalonRepository from '../db/repo/SalonRepository'
 import SalonRegistrationRepository from '../db/repo/SalonRegistrationRepository'
 import SalonRegistrationDbo from '../db/dbo/SalonRegistrationDbo'
-import CustomerId from './domain/CustomerId'
+import ActorId from './domain/ActorId'
 import Reaction from './spi/Reaction'
 import Reactions from './spi/Reactions'
 import Results from './Results'
@@ -21,14 +21,11 @@ class SalonRegistrator {
   }
 
   validateAndRegister (
-    customerId: CustomerId,
+    actorId: ActorId,
     salonName: string,
     salonSecret: string
   ): Promise<Array<Reaction>> {
-    return this.salonRepository.createQueryBuilder('salon')
-      .where('salon.salonName = :salonName')
-      .setParameters({ salonName })
-      .getOne()
+    return this.salonRepository.findByName(salonName)
       .then(Optional.ofNullable)
       .then(
         (salon) => {
@@ -40,7 +37,7 @@ class SalonRegistrator {
           }
           const registration: SalonRegistrationDbo = new SalonRegistrationDbo()
           registration.salon = salon.get()
-          registration.customerId = customerId.toRepresentation()
+          registration.actorId = actorId.toRepresentation()
           return this.salonRegistrationRepository.save(registration).then(
             () => Results.many(Reactions.plainText('Twoje konto od teraz powiązane jest z salonem i służy do skanowania kart klientek.'))
           )
@@ -48,8 +45,8 @@ class SalonRegistrator {
       )
   }
 
-  unregister (customerId: CustomerId) {
-    return this.salonRegistrationRepository.deleteIfExists(customerId.toRepresentation()).then(
+  unregister (actorId: ActorId) {
+    return this.salonRegistrationRepository.deleteIfExists(actorId.toRepresentation()).then(
       (success) => Results.many(Reactions.plainText(success ? 'ok' : 'nieaktywny?'))
     )
   }

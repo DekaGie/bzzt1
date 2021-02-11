@@ -43,11 +43,11 @@ Zanim ją zaakceptujesz, poproś by klientka zagadała do bota i aktywowała kar
 Nie potrzebuję więcej zdjęć :)`
   }
 
-  static activeCustomerWelcome (name: Optional<string>): string {
+  static customerWelcome (name: Optional<string>): string {
     return name.map((value) => `Dzień dobry, ${value}!`).orElse('Witaj ponownie!')
   }
 
-  static activeCustomerIntentPrompt (): string {
+  static customerIntentPrompt (): string {
     return 'W czym mogę pomóc?'
   }
 
@@ -70,11 +70,11 @@ Po prostu przy płatności wyciągnij ją zamiast karty płatniczej :)`
     return 'Zadzwoń do nas'
   }
 
-  static inactiveCustomerWelcome (): string {
+  static unregisteredActorWelcome (): string {
     return 'Hej, nieznajoma!'
   }
 
-  static inactiveCustomerIntentPrompt (): string {
+  static unregisteredActorIntentPrompt (): string {
     return 'Czym jesteś zainteresowana?'
   }
 

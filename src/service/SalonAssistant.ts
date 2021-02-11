@@ -1,7 +1,7 @@
 import { Optional } from 'typescript-optional'
 import ImageUrl from './domain/ImageUrl'
 import BarcodeParser from './BarcodeParser'
-import CustomerAssistant from './CustomerAssistant'
+import ActorAssistant from './ActorAssistant'
 import CardRepository from '../db/repo/CardRepository'
 import Instant from './domain/Instant'
 import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
@@ -19,14 +19,14 @@ import TextExtractions from './TextExtractions'
 import Results from './Results'
 import CardContextInquiry from './CardContextInquiry'
 import StateStore from './StateStore'
-import CustomerId from './domain/CustomerId'
+import ActorId from './domain/ActorId'
 import StateCategoryId from './domain/StateCategoryId'
 import StateSlot from './StateSlot'
 import Promises from '../util/Promises'
 
-class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> {
+class SalonAssistant implements ActorAssistant<SalonRegistrationDbo> {
   private static readonly SHOULD_SEND_PICTURE_FOR_CARD: StateCategoryId =
-    new StateCategoryId(SalonCustomerAssistant.name, 'SHOULD_SEND_PICTURE_FOR_CARD');
+    new StateCategoryId(SalonAssistant.name, 'SHOULD_SEND_PICTURE_FOR_CARD');
 
   private readonly barcodeParser: BarcodeParser;
 
@@ -44,38 +44,38 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
     this.stateStore = stateStore
   }
 
-  handle (customer: SalonRegistrationDbo, inquiry: Inquiry): Promise<Array<Reaction>> {
+  handle (salon: SalonRegistrationDbo, inquiry: Inquiry): Promise<Array<Reaction>> {
     switch (inquiry.type) {
       case 'FREE_TEXT': {
-        const pictureForCardNumber: Optional<number> = this.pictureAwaitingCardNumber(customer).get()
+        const pictureForCardNumber: Optional<number> = this.pictureAwaitingCardNumber(salon).get()
         if (pictureForCardNumber.isPresent()) {
-          return this.handleFailedPictureFor(customer)
+          return this.handleFailedPictureFor(salon)
         }
         const freeTextInquiry: FreeTextInquiry = inquiry as FreeTextInquiry
         const cardNumber: Optional<number> = TextExtractions.cardNumber(freeTextInquiry.freeText)
         if (!cardNumber.isPresent()) {
           return Results.many(Reactions.plainText(StaticTexts.salonOnlyChecksCards()))
         }
-        return this.handleCardNumber(customer, cardNumber.get())
+        return this.handleCardNumber(salon, cardNumber.get())
       }
       case 'IMAGE': {
         const imageInquiry: ImageInquiry = inquiry as ImageInquiry
-        const pictureForCardNumber: Optional<number> = this.pictureAwaitingCardNumber(customer).get()
+        const pictureForCardNumber: Optional<number> = this.pictureAwaitingCardNumber(salon).get()
         if (pictureForCardNumber.isPresent()) {
-          return this.handlePictureFor(customer, pictureForCardNumber.get(), imageInquiry.imageUrl)
+          return this.handlePictureFor(salon, pictureForCardNumber.get(), imageInquiry.imageUrl)
         }
         return this.barcodeParser.parse(imageInquiry.imageUrl).then(
           (cardNumber) => {
             if (!cardNumber.isPresent()) {
               return Results.many(Reactions.plainText(StaticTexts.poorBarcodeImage()))
             }
-            return this.handleCardNumber(customer, cardNumber.get())
+            return this.handleCardNumber(salon, cardNumber.get())
           }
         )
       }
       case 'PICTURE_CONSENTED': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
-        return this.promptForPicture(customer, cardInquiry.cardNumber)
+        return this.promptForPicture(salon, cardInquiry.cardNumber)
       }
       case 'PICTURE_NOT_CONSENTED': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
@@ -83,11 +83,11 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
       }
       case 'ID_VERIFICATION_SUCCESS': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
-        return this.handleVerified(customer, cardInquiry.cardNumber)
+        return this.handleVerified(salon, cardInquiry.cardNumber)
       }
       case 'ID_VERIFICATION_FAILURE': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
-        return this.handleVerificationFailure(customer, cardInquiry.cardNumber)
+        return this.handleVerificationFailure(salon, cardInquiry.cardNumber)
       }
       default: {
         return Results.many()
@@ -95,7 +95,7 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
     }
   }
 
-  private handleCardNumber (customer: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
+  private handleCardNumber (salon: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
     return this.cardRepository.findFull(cardNumber)
       .then(Optional.ofNullable)
       .then(
@@ -103,12 +103,12 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
           if (!card.isPresent()) {
             return Results.many(Reactions.plainText(StaticTexts.salonInvalidCardNumber(cardNumber)))
           }
-          return this.handleCard(customer, card.get())
+          return this.handleCard(salon, card.get())
         }
       )
   }
 
-  private handleCard (customer: SalonRegistrationDbo, card: CardDbo): Promise<Array<Reaction>> {
+  private handleCard (salon: SalonRegistrationDbo, card: CardDbo): Promise<Array<Reaction>> {
     const validUntil: Instant = new Instant(card.agreement.validUntilEs)
     if (Instant.now().isAtOrAfter(validUntil)) {
       return Results.many(Reactions.plainText(StaticTexts.salonOutdatedCard(card.cardNumber)))
@@ -119,7 +119,7 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
     }
     const identification: Optional<IdentificationDbo> = Optional.ofNullable(registration.get().identification)
     if (!identification.isPresent()) {
-      return this.handleVerified(customer, card.cardNumber)
+      return this.handleVerified(salon, card.cardNumber)
     }
     const fullName: string = `${identification.get().firstName} ${identification.get().lastName}`
     const pictureUrl: Optional<ImageUrl> = Optional.ofNullable(identification.get().pictureUrl)
@@ -170,25 +170,25 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
     )
   }
 
-  private promptForPicture (customer: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
-    this.pictureAwaitingCardNumber(customer).set(cardNumber)
+  private promptForPicture (salon: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
+    this.pictureAwaitingCardNumber(salon).set(cardNumber)
     return Results.many(Reactions.plainText(StaticTexts.takePicturePrompt()))
   }
 
   private handlePictureFor (
-    customer: SalonRegistrationDbo, cardNumber: number, pictureUrl: ImageUrl
+    salon: SalonRegistrationDbo, cardNumber: number, pictureUrl: ImageUrl
   ): Promise<Array<Reaction>> {
     // TODO: mail
     console.log(`Received picture for ${cardNumber}: ${pictureUrl.asString()}`)
-    this.pictureAwaitingCardNumber(customer).clear()
+    this.pictureAwaitingCardNumber(salon).clear()
     return Promises.flatAll(
       Results.many(Reactions.plainText(StaticTexts.thanksForCustomerPicture())),
       this.promptForIdVerification(cardNumber)
     )
   }
 
-  private handleFailedPictureFor (customer: SalonRegistrationDbo): Promise<Array<Reaction>> {
-    this.pictureAwaitingCardNumber(customer).clear()
+  private handleFailedPictureFor (salon: SalonRegistrationDbo): Promise<Array<Reaction>> {
+    this.pictureAwaitingCardNumber(salon).clear()
     return Results.many(Reactions.plainText(StaticTexts.customerPictureUpdateAborted()))
   }
 
@@ -210,7 +210,7 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
                 ),
                 Choices.inquiry(
                   StaticTexts.no(),
-                  { type: 'ID_VERIFICATION_FAILURE' }
+                  { type: 'ID_VERIFICATION_FAILURE', cardNumber }
                 )
               ]
             }
@@ -220,24 +220,24 @@ class SalonCustomerAssistant implements CustomerAssistant<SalonRegistrationDbo> 
     )
   }
 
-  private pictureAwaitingCardNumber (customer: SalonRegistrationDbo): StateSlot<number> {
+  private pictureAwaitingCardNumber (salon: SalonRegistrationDbo): StateSlot<number> {
     return this.stateStore.slot(
-      new CustomerId(customer.customerId),
-      SalonCustomerAssistant.SHOULD_SEND_PICTURE_FOR_CARD
+      new ActorId(salon.actorId),
+      SalonAssistant.SHOULD_SEND_PICTURE_FOR_CARD
     )
   }
 
-  private handleVerified (customer: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
+  private handleVerified (salon: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
     // TODO: uslugi
-    console.log(`Salon ${customer.salon.salonName} akceptuje ${cardNumber}`)
+    console.log(`Salon ${salon.salon.salonName} akceptuje ${cardNumber}`)
     return Results.many(Reactions.plainText(StaticTexts.acceptCard()))
   }
 
-  private handleVerificationFailure (customer: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
+  private handleVerificationFailure (salon: SalonRegistrationDbo, cardNumber: number): Promise<Array<Reaction>> {
     // TODO: mail
-    console.log(`Salon ${customer.salon.salonName} nie akceptuje ${cardNumber}`)
+    console.log(`Salon ${salon.salon.salonName} nie akceptuje ${cardNumber}`)
     return Results.many(Reactions.plainText(StaticTexts.rejectCard()))
   }
 }
 
-export default SalonCustomerAssistant
+export default SalonAssistant

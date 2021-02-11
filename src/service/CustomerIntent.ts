@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-enum ActiveCustomerIntent {
+enum CustomerIntent {
 
   SHOW_PARTNERS,
 
@@ -8,4 +8,4 @@ enum ActiveCustomerIntent {
   SHOW_TUTORIAL
 }
 
-export default ActiveCustomerIntent
+export default CustomerIntent

@@ -7,7 +7,7 @@ import SalonDbo from './SalonDbo'
 @Entity()
 class SalonRegistrationDbo {
   @PrimaryColumn()
-  customerId: string;
+  actorId: string;
 
   @ManyToOne(
     () => SalonDbo,

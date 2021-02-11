@@ -1,13 +1,13 @@
 import { Optional } from 'typescript-optional'
 import BarcodeParser from './BarcodeParser'
-import CustomerAssistant from './CustomerAssistant'
+import ActorAssistant from './ActorAssistant'
 import StaticImageUrls from './StaticImageUrls'
 import CardRegistrator from './CardRegistrator'
 import StateCategoryId from './domain/StateCategoryId'
 import StateSlot from './StateSlot'
 import Reaction from './spi/Reaction'
 import Inquiry from './spi/Inquiry'
-import CustomerId from './domain/CustomerId'
+import ActorId from './domain/ActorId'
 import TextExtractions from './TextExtractions'
 import StateStore from './StateStore'
 import Reactions from './spi/Reactions'
@@ -18,9 +18,9 @@ import ImageInquiry from './spi/ImageInquiry'
 import CardContextInquiry from './CardContextInquiry'
 import Results from './Results'
 
-class InactiveCustomerAssistant implements CustomerAssistant<CustomerId> {
+class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
   private static readonly ASKED_FOR_ACTIVATE: StateCategoryId =
-      new StateCategoryId(InactiveCustomerAssistant.name, 'ASKED_FOR_ACTIVATE');
+      new StateCategoryId(UnregisteredActorAssistant.name, 'ASKED_FOR_ACTIVATE');
 
   private readonly cardRegistrator: CardRegistrator;
 
@@ -38,20 +38,20 @@ class InactiveCustomerAssistant implements CustomerAssistant<CustomerId> {
     this.stateStore = stateStore
   }
 
-  handle (customerId: CustomerId, inquiry: Inquiry): Promise<Array<Reaction>> {
+  handle (actorId: ActorId, inquiry: Inquiry): Promise<Array<Reaction>> {
     switch (inquiry.type) {
       case 'FREE_TEXT': {
         const freeTextInquiry: FreeTextInquiry = inquiry as FreeTextInquiry
         const cardNumber: Optional<number> = TextExtractions.cardNumber(freeTextInquiry.freeText)
         if (cardNumber.isPresent()) {
-          return this.handleCardNumber(customerId, cardNumber.get())
+          return this.handleCardNumber(actorId, cardNumber.get())
         }
         return Results.many(
           Reactions.choice(
             {
               topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
-              title: StaticTexts.inactiveCustomerWelcome(),
-              subtitle: Optional.of(StaticTexts.inactiveCustomerIntentPrompt()),
+              title: StaticTexts.unregisteredActorWelcome(),
+              subtitle: Optional.of(StaticTexts.unregisteredActorIntentPrompt()),
               choices: [
                 Choices.inquiry(StaticTexts.activateCard(), { type: 'PROMPT_ACTIVATE' }),
                 Choices.phone(StaticTexts.customerService(), '+48662097978')
@@ -67,17 +67,17 @@ class InactiveCustomerAssistant implements CustomerAssistant<CustomerId> {
             if (!cardNumber.isPresent()) {
               return Results.many(Reactions.plainText(StaticTexts.poorBarcodeImage()))
             }
-            return this.handleCardNumber(customerId, cardNumber.get())
+            return this.handleCardNumber(actorId, cardNumber.get())
           }
         )
       }
       case 'PROMPT_ACTIVATE': {
-        this.stateStore.slot(customerId, InactiveCustomerAssistant.ASKED_FOR_ACTIVATE).set(true)
+        this.stateStore.slot(actorId, UnregisteredActorAssistant.ASKED_FOR_ACTIVATE).set(true)
         return Results.many(Reactions.plainText(StaticTexts.inputCardNumberPrompt()))
       }
       case 'ACTIVATE': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
-        return this.cardRegistrator.validateAndRegister(customerId, cardInquiry.cardNumber)
+        return this.cardRegistrator.validateAndRegister(actorId, cardInquiry.cardNumber)
       }
       default: {
         return Results.many()
@@ -85,10 +85,10 @@ class InactiveCustomerAssistant implements CustomerAssistant<CustomerId> {
     }
   }
 
-  handleCardNumber (customerId: CustomerId, cardNumber: number): Promise<Array<Reaction>> {
-    const asked: StateSlot<Boolean> = this.stateStore.slot(customerId, InactiveCustomerAssistant.ASKED_FOR_ACTIVATE)
+  handleCardNumber (actorId: ActorId, cardNumber: number): Promise<Array<Reaction>> {
+    const asked: StateSlot<Boolean> = this.stateStore.slot(actorId, UnregisteredActorAssistant.ASKED_FOR_ACTIVATE)
     if (asked.get().orElse(false)) {
-      return this.cardRegistrator.validateAndRegister(customerId, cardNumber)
+      return this.cardRegistrator.validateAndRegister(actorId, cardNumber)
     }
     return Results.many(
       Reactions.choice(
@@ -103,4 +103,4 @@ class InactiveCustomerAssistant implements CustomerAssistant<CustomerId> {
   }
 }
 
-export default InactiveCustomerAssistant
+export default UnregisteredActorAssistant

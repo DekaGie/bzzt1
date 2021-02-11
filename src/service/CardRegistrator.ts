@@ -6,7 +6,7 @@ import CardDbo from '../db/dbo/CardDbo'
 import Instant from './domain/Instant'
 import StaticImageUrls from './StaticImageUrls'
 import Reaction from './spi/Reaction'
-import CustomerId from './domain/CustomerId'
+import ActorId from './domain/ActorId'
 import Reactions from './spi/Reactions'
 import StaticTexts from './StaticTexts'
 import Results from './Results'
@@ -25,7 +25,7 @@ class CardRegistrator {
     this.cardRegistrationRepository = cardRegistrationRepository
   }
 
-  validateAndRegister (customerId: CustomerId, cardNumber: number): Promise<Array<Reaction>> {
+  validateAndRegister (actorId: ActorId, cardNumber: number): Promise<Array<Reaction>> {
     return this.cardRepository.findFull(cardNumber)
       .then(Optional.ofNullable)
       .then(
@@ -41,15 +41,15 @@ class CardRegistrator {
           if (Instant.now().isAtOrAfter(validUntil)) {
             return Results.many(Reactions.plainText(StaticTexts.outdatedCard(cardNumber)))
           }
-          return this.register(customerId, card)
+          return this.register(actorId, card)
         }
       )
   }
 
-  private register (customerId: CustomerId, card: CardDbo): Promise<Array<Reaction>> {
+  private register (actorId: ActorId, card: CardDbo): Promise<Array<Reaction>> {
     const registration: CardRegistrationDbo = new CardRegistrationDbo()
     registration.card = card
-    registration.customerId = customerId.toRepresentation()
+    registration.actorId = actorId.toRepresentation()
     return this.cardRegistrationRepository.save(registration)
       .then(() => CardRegistrator.congratulate(card))
   }

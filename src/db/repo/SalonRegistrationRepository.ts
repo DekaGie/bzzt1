@@ -3,19 +3,19 @@ import SalonRegistrationDbo from '../dbo/SalonRegistrationDbo'
 
 @EntityRepository(SalonRegistrationDbo)
 class SalonRegistrationRepository extends Repository<SalonRegistrationDbo> {
-  findFull (customerId: string): Promise<SalonRegistrationDbo | undefined> {
+  findFull (actorId: string): Promise<SalonRegistrationDbo | undefined> {
     return this.createQueryBuilder('registration')
       .leftJoinAndSelect('registration.salon', 'salon')
-      .where('registration.customerId = :customerId')
-      .setParameters({ customerId })
+      .where('registration.actorId = :actorId')
+      .setParameters({ actorId })
       .getOne()
   }
 
-  deleteIfExists (customerId: string): Promise<boolean> {
+  deleteIfExists (actorId: string): Promise<boolean> {
     return this.createQueryBuilder()
       .delete()
-      .where('customerId = :customerId')
-      .setParameters({ customerId })
+      .where('actorId = :actorId')
+      .setParameters({ actorId })
       .execute()
       .then((deleted) => deleted.affected > 0)
   }

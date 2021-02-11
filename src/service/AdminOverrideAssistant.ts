@@ -1,45 +1,45 @@
-import CustomerAssistant from './CustomerAssistant'
+import ActorAssistant from './ActorAssistant'
 import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
 import Reaction from './spi/Reaction'
 import Inquiry from './spi/Inquiry'
-import CustomerId from './domain/CustomerId'
+import ActorId from './domain/ActorId'
 import SalonRegistrator from './SalonRegistrator'
 import StateStore from './StateStore'
 import FreeTextInquiry from './spi/FreeTextInquiry'
 import Results from './Results'
 import Reactions from './spi/Reactions'
 
-class AdminOverrideAssistant implements CustomerAssistant<CustomerId> {
+class AdminOverrideAssistant implements ActorAssistant<ActorId> {
   private readonly salonRegistrator: SalonRegistrator;
 
   private readonly cardRegistrationRepository: CardRegistrationRepository;
 
   private readonly stateStore: StateStore;
 
-  private readonly underlying: CustomerAssistant<CustomerId>;
+  private readonly underlying: ActorAssistant<ActorId>;
 
   constructor (
     salonRegistrator: SalonRegistrator,
     cardRegistrationRepository: CardRegistrationRepository,
     stateStore: StateStore,
-    underlying: CustomerAssistant<CustomerId>,
+    underlying: ActorAssistant<ActorId>,
   ) {
     this.underlying = underlying
     this.salonRegistrator = salonRegistrator
     this.stateStore = stateStore
   }
 
-  handle (customerId: CustomerId, inquiry: Inquiry): Promise<Array<Reaction>> {
+  handle (actorId: ActorId, inquiry: Inquiry): Promise<Array<Reaction>> {
     if (inquiry.type === 'FREE_TEXT') {
       const freeText: FreeTextInquiry = inquiry as FreeTextInquiry
       if (freeText.freeText.startsWith('!')) {
-        return this.handleAdminCommand(customerId, freeText.freeText.substring(1))
+        return this.handleAdminCommand(actorId, freeText.freeText.substring(1))
       }
     }
-    return this.underlying.handle(customerId, inquiry)
+    return this.underlying.handle(actorId, inquiry)
   }
 
-  private handleAdminCommand (customerId: CustomerId, command: string): Promise<Array<Reaction>> {
+  private handleAdminCommand (actorId: ActorId, command: string): Promise<Array<Reaction>> {
     const parts: Array<string> = command.split(' ')
       .filter((part) => part.length > 0)
     if (parts.length === 0) {
@@ -47,13 +47,13 @@ class AdminOverrideAssistant implements CustomerAssistant<CustomerId> {
     }
     const verb: string = parts[0]
     if (verb === 'me') {
-      return Results.many(Reactions.plainText(`${customerId}: ${JSON.stringify(this.stateStore.allOf(customerId))}`))
+      return Results.many(Reactions.plainText(`${actorId}: ${JSON.stringify(this.stateStore.allOf(actorId))}`))
     }
     if (verb === 'clearstate') {
       return Results.many(Reactions.plainText('ok'))
     }
     if (verb === 'unactivate') {
-      return this.cardRegistrationRepository.deleteIfExists(customerId.toRepresentation()).then(
+      return this.cardRegistrationRepository.deleteIfExists(actorId.toRepresentation()).then(
         (success) => Results.many(Reactions.plainText(success ? 'ok' : 'nieaktywny?'))
       )
     }
@@ -61,10 +61,10 @@ class AdminOverrideAssistant implements CustomerAssistant<CustomerId> {
       if (parts.length !== 3) {
         return Results.many(Reactions.plainText('Podaj nazwę salonu i hasło, np. "!salon mkbeauty abc123".'))
       }
-      return this.salonRegistrator.validateAndRegister(customerId, parts[1], parts[2])
+      return this.salonRegistrator.validateAndRegister(actorId, parts[1], parts[2])
     }
     if (verb === 'unsalon') {
-      return this.salonRegistrator.unregister(customerId)
+      return this.salonRegistrator.unregister(actorId)
     }
     return Results.many(Reactions.plainText(`Nie znam komendy ${verb}`))
   }

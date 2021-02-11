@@ -7,7 +7,7 @@ import IdentificationDbo from './IdentificationDbo'
 @Entity()
 class CardRegistrationDbo {
   @PrimaryColumn()
-  customerId: string;
+  actorId: string;
 
   @OneToOne(
     () => CardDbo,

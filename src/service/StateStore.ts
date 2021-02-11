@@ -1,6 +1,6 @@
 import { Optional } from 'typescript-optional'
 import StateSlot from './StateSlot'
-import CustomerId from './domain/CustomerId'
+import ActorId from './domain/ActorId'
 import StateCategoryId from './domain/StateCategoryId'
 
 class StateStore {
@@ -12,8 +12,8 @@ class StateStore {
     this.memory = new Map()
   }
 
-  slot<T> (customerId: CustomerId, categoryId: StateCategoryId): StateSlot<T> {
-    const key: string = customerId.toRepresentation()
+  slot<T> (actorId: ActorId, categoryId: StateCategoryId): StateSlot<T> {
+    const key: string = actorId.toRepresentation()
         + StateStore.SEPARATOR + categoryId.toRepresentation()
     return Optional.ofNullable(this.memory.get(key)).orElseGet(
       () => {
@@ -24,9 +24,9 @@ class StateStore {
     )
   }
 
-  allOf (customerId: CustomerId): Map<StateCategoryId, any> {
+  allOf (actorId: ActorId): Map<StateCategoryId, any> {
     const result: Map<StateCategoryId, any> = new Map()
-    const prefix: string = customerId.toRepresentation() + StateStore.SEPARATOR
+    const prefix: string = actorId.toRepresentation() + StateStore.SEPARATOR
     this.memory.forEach(
       (value, key) => {
         if (key.startsWith(prefix) && value.get().isPresent()) {

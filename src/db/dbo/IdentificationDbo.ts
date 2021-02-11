@@ -6,7 +6,7 @@ import CardRegistrationDbo from './CardRegistrationDbo'
 @Entity()
 class IdentificationDbo {
   @PrimaryColumn()
-  customerId: string;
+  actorId: string;
 
   @OneToOne(
     () => CardRegistrationDbo,
@@ -15,7 +15,7 @@ class IdentificationDbo {
   )
   @JoinColumn(
     {
-      name: 'customerId'
+      name: 'actorId'
     }
   )
   registration: CardRegistrationDbo;

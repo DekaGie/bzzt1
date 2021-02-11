@@ -1,5 +1,5 @@
 import { Optional } from 'typescript-optional'
-import ActiveCustomerIntent from './ActiveCustomerIntent'
+import CustomerIntent from './CustomerIntent'
 
 class TextExtractions {
   static cardNumber (text: string): Optional<number> {
@@ -13,16 +13,16 @@ class TextExtractions {
       .filter((integer) => !Number.isNaN(integer))
   }
 
-  static activeCustomerIntent (text: string): Optional<ActiveCustomerIntent> {
+  static customerIntent (text: string): Optional<CustomerIntent> {
     const lowercased: string = text.toLowerCase()
     if (lowercased.includes('salon') || lowercased.includes('partner')) {
-      return Optional.of(ActiveCustomerIntent.SHOW_PARTNERS)
+      return Optional.of(CustomerIntent.SHOW_PARTNERS)
     }
     if (lowercased.includes('usług') || lowercased.includes('uslug') || lowercased.includes('pakiet')) {
-      return Optional.of(ActiveCustomerIntent.SHOW_SUBSCRIPTIONS)
+      return Optional.of(CustomerIntent.SHOW_SUBSCRIPTIONS)
     }
     if (lowercased.includes('jak') || lowercased.includes('czy')) {
-      return Optional.of(ActiveCustomerIntent.SHOW_TUTORIAL)
+      return Optional.of(CustomerIntent.SHOW_TUTORIAL)
     }
     return Optional.empty()
   }

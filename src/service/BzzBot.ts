@@ -1,6 +1,6 @@
-import CustomerAssistant from './CustomerAssistant'
+import ActorAssistant from './ActorAssistant'
 import FbMessengerOutbox from '../fb/FbMessengerOutbox'
-import CustomerId from './domain/CustomerId'
+import ActorId from './domain/ActorId'
 import FbMessengerBot from '../fb/FbMessengerBot'
 import FreeTextInquiry from './spi/FreeTextInquiry'
 import Inquiry from './spi/Inquiry'
@@ -18,10 +18,10 @@ import Results from './Results'
 import StaticTexts from './StaticTexts'
 
 class BzzBot implements FbMessengerBot {
-  private readonly customerAssistant: CustomerAssistant<CustomerId>
+  private readonly actorAssistant: ActorAssistant<ActorId>
 
-  constructor (customerAssistant: CustomerAssistant<CustomerId>) {
-    this.customerAssistant = customerAssistant
+  constructor (actorAssistant: ActorAssistant<ActorId>) {
+    this.actorAssistant = actorAssistant
   }
 
   onText (psid: string, text: string, outbox: FbMessengerOutbox): void {
@@ -37,7 +37,7 @@ class BzzBot implements FbMessengerBot {
   }
 
   private onInquiry (psid: string, inquiry: Inquiry, outbox: FbMessengerOutbox): void {
-    this.customerAssistant.handle(new CustomerId(psid), inquiry)
+    this.actorAssistant.handle(new ActorId(psid), inquiry)
       .catch(
         (error) => {
           console.error(`while handling ${psid} inquiring ${JSON.stringify(inquiry)}`)
