@@ -1,7 +1,7 @@
 import {
   Column, Entity, JoinColumn, ManyToOne, PrimaryColumn
 } from 'typeorm'
-import PackageDbo from './PackageDbo'
+import PacketDbo from './PacketDbo'
 
 @Entity()
 class TreatmentDbo {
@@ -17,11 +17,11 @@ class TreatmentDbo {
   displayName: string;
 
   @ManyToOne(
-    () => PackageDbo,
+    () => PacketDbo,
     { nullable: false, onDelete: 'CASCADE' }
   )
   @JoinColumn()
-  package: PackageDbo;
+  packet: PacketDbo;
 
   @Column(
     {

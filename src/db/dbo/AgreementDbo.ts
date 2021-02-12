@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm'
+import {
+  Column, Entity, OneToMany, PrimaryColumn
+} from 'typeorm'
+import AgreementPacketDbo from './AgreementPacketDbo'
 
 @Entity()
 class AgreementDbo {
@@ -7,6 +10,12 @@ class AgreementDbo {
 
   @Column({ type: 'double precision', nullable: false })
   validUntilEs: number;
+
+  @OneToMany(
+    () => AgreementPacketDbo,
+    (agreementPacket) => agreementPacket.agreement
+  )
+  agreementPackets: Array<AgreementPacketDbo>;
 
   @Column(
     {

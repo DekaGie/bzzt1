@@ -6,8 +6,9 @@ import AgreementDbo from './dbo/AgreementDbo'
 import SalonDbo from './dbo/SalonDbo'
 import SalonRegistrationDbo from './dbo/SalonRegistrationDbo'
 import IdentificationDbo from './dbo/IdentificationDbo'
-import PackageDbo from './dbo/PackageDbo'
 import TreatmentDbo from './dbo/TreatmentDbo'
+import PacketDbo from './dbo/PacketDbo'
+import AgreementPacketDbo from './dbo/AgreementPacketDbo'
 
 class Connector {
   static connect (config: Config): Promise<Connection> {
@@ -17,10 +18,11 @@ class Connector {
         url: config.postgresUrl,
         entities: [
           AgreementDbo,
+          AgreementPacketDbo,
           CardDbo,
           CardRegistrationDbo,
           IdentificationDbo,
-          PackageDbo,
+          PacketDbo,
           SalonDbo,
           SalonRegistrationDbo,
           TreatmentDbo

@@ -1,12 +1,13 @@
 import {
-  Column, Entity, JoinColumn, OneToMany, PrimaryColumn
+  Column, Entity, OneToMany, PrimaryColumn
 } from 'typeorm'
 import TreatmentDbo from './TreatmentDbo'
+import AgreementPacketDbo from './AgreementPacketDbo'
 
 @Entity()
-class PackageDbo {
+class PacketDbo {
   @PrimaryColumn()
-  packageName: string;
+  packetName: string;
 
   @Column(
     {
@@ -18,10 +19,15 @@ class PackageDbo {
 
   @OneToMany(
     () => TreatmentDbo,
-    (treatment) => treatment.package
+    (treatment) => treatment.packet
   )
-  @JoinColumn()
   treatments: Array<TreatmentDbo>;
+
+  @OneToMany(
+    () => AgreementPacketDbo,
+    (agreementPacket) => agreementPacket.packet
+  )
+  agreementPackets: Array<AgreementPacketDbo>;
 
   @Column(
     {
@@ -33,4 +39,4 @@ class PackageDbo {
   manualAnnotation: string;
 }
 
-export default PackageDbo
+export default PacketDbo
