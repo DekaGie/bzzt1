@@ -6,6 +6,8 @@ import AgreementDbo from './dbo/AgreementDbo'
 import SalonDbo from './dbo/SalonDbo'
 import SalonRegistrationDbo from './dbo/SalonRegistrationDbo'
 import IdentificationDbo from './dbo/IdentificationDbo'
+import PackageDbo from './dbo/PackageDbo'
+import TreatmentDbo from './dbo/TreatmentDbo'
 
 class Connector {
   static connect (config: Config): Promise<Connection> {
@@ -18,8 +20,10 @@ class Connector {
           CardDbo,
           CardRegistrationDbo,
           IdentificationDbo,
+          PackageDbo,
           SalonDbo,
-          SalonRegistrationDbo
+          SalonRegistrationDbo,
+          TreatmentDbo
         ],
         synchronize: true,
         logging: false

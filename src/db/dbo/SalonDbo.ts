@@ -5,6 +5,15 @@ class SalonDbo {
   @PrimaryColumn()
   salonName: string;
 
+  @Column(
+    {
+      type: 'text',
+      nullable: false,
+      default: '' // TODO: remove after deploy
+    }
+  )
+  displayName: string;
+
   @Column({ type: 'text', nullable: false })
   salonSecret: string;
 

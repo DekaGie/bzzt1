@@ -1,9 +1,9 @@
 import { Optional } from 'typescript-optional'
 import { HashMap, JMap } from 'typescriptcollectionsframework'
-import OcrSpace from '../ocr/OcrSpace'
-import ImageDownloader from '../img/ImageDownloader'
-import Decoder39 from '../code39/Decoder39'
-import ImageUrl from './domain/ImageUrl'
+import ImageDownloader from '../../img/ImageDownloader'
+import ImageUrl from '../domain/ImageUrl'
+import OcrSpace from '../../ocr/OcrSpace'
+import Decoder39 from '../../code39/Decoder39'
 
 class BarcodeParser {
   private static readonly DIGIT_FIXES: JMap<string, number> = (() => {

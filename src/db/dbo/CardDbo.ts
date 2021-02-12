@@ -36,6 +36,10 @@ class CardDbo {
     }
   )
   manualAnnotation: string;
+
+  static refer (cardNumber: number): CardDbo {
+    return { cardNumber } as CardDbo
+  }
 }
 
 export default CardDbo

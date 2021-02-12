@@ -3,8 +3,8 @@ import { Connection } from 'typeorm'
 import ServiceSlot from './ServiceSlot'
 import BzzBot from './service/BzzBot'
 import FbClient from './fb/impl/FbClient'
-import BarcodeParser from './service/BarcodeParser'
 import StateStore from './service/StateStore'
+import BarcodeParser from './service/api/BarcodeParser'
 
 class ServiceLocator {
   readonly db: ServiceSlot<Connection>

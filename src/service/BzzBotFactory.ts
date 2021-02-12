@@ -1,48 +1,50 @@
 import ServiceLocator from '../ServiceLocator'
 import Config from '../Config'
 import BzzBot from './BzzBot'
-import BusinessAssistant from './BusinessAssistant'
-import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
-import CardRepository from '../db/repo/CardRepository'
-import SalonRegistrationRepository from '../db/repo/SalonRegistrationRepository'
-import SalonAssistant from './SalonAssistant'
-import UnregisteredActorAssistant from './UnregisteredActorAssistant'
-import CustomerAssistant from './CustomerAssistant'
-import CardRegistrator from './CardRegistrator'
-import ActorAssistant from './ActorAssistant'
-import ActorId from './domain/ActorId'
-import AdminOverrideAssistant from './AdminOverrideAssistant'
-import SalonRegistrator from './SalonRegistrator'
 import SalonRepository from '../db/repo/SalonRepository'
+import CardRepository from '../db/repo/CardRepository'
+import SalonAssistant from './api/SalonAssistant'
+import SalonRegistrator from './api/SalonRegistrator'
+import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
+import SalonRegistrationRepository from '../db/repo/SalonRegistrationRepository'
+import CardRegistrator from './api/CardRegistrator'
+import BusinessAssistant from './api/BusinessAssistant'
+import AdminOverrideAssistant from './api/AdminOverrideAssistant'
+import ActorId from './domain/ActorId'
+import UnregisteredActorAssistant from './api/UnregisteredActorAssistant'
+import ActorAssistant from './api/ActorAssistant'
+import CustomerAssistant from './api/CustomerAssistant'
+import CardChecker from './api/CardChecker'
+import StateStore from './StateStore'
+import BarcodeParser from './api/BarcodeParser'
+import ActorResolver from './api/ActorResolver'
 
 class BzzBotFactory {
   static create (config: Config, locator: ServiceLocator) {
+    const cardChecker: CardChecker = new CardChecker(
+      locator.db.refer().getCustomRepository(CardRepository)
+    )
+    const barcodeParser: BarcodeParser = locator.barcodes.refer()
+    const stateStore: StateStore = locator.states.refer()
+    const cardRegistrationRepository: CardRegistrationRepository = locator.db.refer()
+      .getCustomRepository(CardRegistrationRepository)
+    const salonRegistrationRepository: SalonRegistrationRepository = locator.db.refer()
+      .getCustomRepository(SalonRegistrationRepository)
+    const cardRegistrator: CardRegistrator = new CardRegistrator(cardChecker, cardRegistrationRepository)
     const businessAssistant: ActorAssistant<ActorId> = new BusinessAssistant(
-      locator.db.refer().getCustomRepository(SalonRegistrationRepository),
-      locator.db.refer().getCustomRepository(CardRegistrationRepository),
-      new SalonAssistant(
-        locator.barcodes.refer(),
-        locator.db.refer().getCustomRepository(CardRepository),
-        locator.states.refer()
-      ),
+      new ActorResolver(salonRegistrationRepository, cardRegistrationRepository),
+      new SalonAssistant(barcodeParser, cardChecker, stateStore),
       new CustomerAssistant(),
-      new UnregisteredActorAssistant(
-        locator.barcodes.refer(),
-        new CardRegistrator(
-          locator.db.refer().getCustomRepository(CardRepository),
-          locator.db.refer().getCustomRepository(CardRegistrationRepository)
-        ),
-        locator.states.refer()
-      )
+      new UnregisteredActorAssistant(barcodeParser, cardRegistrator, stateStore)
     )
     return new BzzBot(
       new AdminOverrideAssistant(
         new SalonRegistrator(
           locator.db.refer().getCustomRepository(SalonRepository),
-          locator.db.refer().getCustomRepository(SalonRegistrationRepository)
+          salonRegistrationRepository
         ),
-        locator.db.refer().getCustomRepository(CardRegistrationRepository),
-        locator.states.refer(),
+        cardRegistrationRepository,
+        stateStore,
         businessAssistant
       )
     )

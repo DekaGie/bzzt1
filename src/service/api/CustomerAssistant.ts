@@ -1,35 +1,33 @@
 import { Optional } from 'typescript-optional'
 import ActorAssistant from './ActorAssistant'
-import CardRegistrationDbo from '../db/dbo/CardRegistrationDbo'
-import StaticImageUrls from './StaticImageUrls'
-import Inquiry from './spi/Inquiry'
-import Reaction from './spi/Reaction'
-import Reactions from './spi/Reactions'
-import TextExtractions from './TextExtractions'
-import FreeTextInquiry from './spi/FreeTextInquiry'
-import CustomerIntent from './CustomerIntent'
-import Choices from './spi/Choices'
-import Results from './Results'
-import GpTexts from './text/GpTexts'
-import CustomerTexts from './text/CustomerTexts'
+import CustomerIntent from '../domain/CustomerIntent'
+import CustomerTexts from '../text/CustomerTexts'
+import Choices from '../spi/Choices'
+import GpTexts from '../text/GpTexts'
+import StaticImageUrls from '../util/StaticImageUrls'
+import FreeTextInquiry from '../spi/FreeTextInquiry'
+import Reactions from '../spi/Reactions'
+import Inquiry from '../spi/Inquiry'
+import Reaction from '../spi/Reaction'
+import TextExtractions from '../util/TextExtractions'
+import Results from '../util/Results'
+import CustomerActor from '../domain/CustomerActor'
 
-class CustomerAssistant implements ActorAssistant<CardRegistrationDbo> {
-  handle (registration: CardRegistrationDbo, inquiry: Inquiry): Promise<Array<Reaction>> {
+class CustomerAssistant implements ActorAssistant<CustomerActor> {
+  handle (actor: CustomerActor, inquiry: Inquiry): Promise<Array<Reaction>> {
     switch (inquiry.type) {
       case 'FREE_TEXT': {
         const freeTextInquiry: FreeTextInquiry = inquiry as FreeTextInquiry
         const intent: Optional<CustomerIntent> = TextExtractions.customerIntent(freeTextInquiry.freeText)
         if (!intent.isPresent()) {
-          return this.handleUnknown(registration)
+          return this.handleUnknown(actor)
         }
         return this.handleIntent(intent.get())
       }
       case 'IMAGE': {
         return Results.many(
           Reactions.plainText(
-            CustomerTexts.alreadyActivated(
-              registration.card.cardNumber, registration.card.agreement.employerName
-            )
+            CustomerTexts.alreadyActivated(actor.cardNumber().asNumber(), actor.employerName())
           )
         )
       }
@@ -48,15 +46,12 @@ class CustomerAssistant implements ActorAssistant<CardRegistrationDbo> {
     }
   }
 
-  private handleUnknown (registration: CardRegistrationDbo): Promise<Array<Reaction>> {
+  private handleUnknown (actor: CustomerActor): Promise<Array<Reaction>> {
     return Results.many(
       Reactions.choice(
         {
           topImage: Optional.empty(),
-          title: CustomerTexts.welcome(
-            Optional.ofNullable(registration.identification)
-              .map((identification) => identification.firstName)
-          ),
+          title: CustomerTexts.welcome(actor.calloutName()),
           subtitle: Optional.of(CustomerTexts.intentPrompt()),
           choices: [
             Choices.inquiry(CustomerTexts.showPartners(), { type: 'SHOW_PARTNERS' }),

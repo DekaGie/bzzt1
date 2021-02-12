@@ -1,13 +1,14 @@
 import ActorAssistant from './ActorAssistant'
-import CardRegistrationRepository from '../db/repo/CardRegistrationRepository'
-import Reaction from './spi/Reaction'
-import Inquiry from './spi/Inquiry'
-import ActorId from './domain/ActorId'
 import SalonRegistrator from './SalonRegistrator'
-import StateStore from './StateStore'
-import FreeTextInquiry from './spi/FreeTextInquiry'
-import Results from './Results'
-import Reactions from './spi/Reactions'
+import CardRegistrationRepository
+  from '../../db/repo/CardRegistrationRepository'
+import StateStore from '../StateStore'
+import FreeTextInquiry from '../spi/FreeTextInquiry'
+import Reactions from '../spi/Reactions'
+import ActorId from '../domain/ActorId'
+import Inquiry from '../spi/Inquiry'
+import Reaction from '../spi/Reaction'
+import Results from '../util/Results'
 
 class AdminOverrideAssistant implements ActorAssistant<ActorId> {
   private readonly salonRegistrator: SalonRegistrator;

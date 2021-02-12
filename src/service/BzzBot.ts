@@ -1,4 +1,3 @@
-import ActorAssistant from './ActorAssistant'
 import FbMessengerOutbox from '../fb/FbMessengerOutbox'
 import ActorId from './domain/ActorId'
 import FbMessengerBot from '../fb/FbMessengerBot'
@@ -14,8 +13,9 @@ import ImageUrl from './domain/ImageUrl'
 import ImageInquiry from './spi/ImageInquiry'
 import Promises from '../util/Promises'
 import Reactions from './spi/Reactions'
-import Results from './Results'
 import GpTexts from './text/GpTexts'
+import ActorAssistant from './api/ActorAssistant'
+import Results from './util/Results'
 
 class BzzBot implements FbMessengerBot {
   private readonly actorAssistant: ActorAssistant<ActorId>

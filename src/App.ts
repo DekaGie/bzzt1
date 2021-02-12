@@ -4,10 +4,10 @@ import ServiceLocator from './ServiceLocator'
 import ServerStarter from './web/ServerStarter'
 import BzzBotFactory from './service/BzzBotFactory'
 import FbClient from './fb/impl/FbClient'
-import BarcodeParser from './service/BarcodeParser'
 import Decoder39 from './code39/Decoder39'
 import OcrSpace from './ocr/OcrSpace'
 import StateStore from './service/StateStore'
+import BarcodeParser from './service/api/BarcodeParser'
 
 class App {
   static start (config: Config): Promise<void> {

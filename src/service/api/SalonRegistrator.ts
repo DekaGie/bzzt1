@@ -1,12 +1,13 @@
 import { Optional } from 'typescript-optional'
-import SalonRepository from '../db/repo/SalonRepository'
-import SalonRegistrationRepository from '../db/repo/SalonRegistrationRepository'
-import SalonRegistrationDbo from '../db/dbo/SalonRegistrationDbo'
-import ActorId from './domain/ActorId'
-import Reaction from './spi/Reaction'
-import Reactions from './spi/Reactions'
-import Results from './Results'
-import UnregisteredTexts from './text/UnregisteredTexts'
+import SalonRepository from '../../db/repo/SalonRepository'
+import SalonRegistrationRepository
+  from '../../db/repo/SalonRegistrationRepository'
+import Reactions from '../spi/Reactions'
+import SalonRegistrationDbo from '../../db/dbo/SalonRegistrationDbo'
+import UnregisteredTexts from '../text/UnregisteredTexts'
+import ActorId from '../domain/ActorId'
+import Reaction from '../spi/Reaction'
+import Results from '../util/Results'
 
 class SalonRegistrator {
   private readonly salonRepository: SalonRepository;

@@ -1,4 +1,4 @@
-import Promises from '../util/Promises'
+import Promises from '../../util/Promises'
 
 class Results {
   static many<T> (...args: Array<T | Promise<T>>): Promise<Array<T>> {

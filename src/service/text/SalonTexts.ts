@@ -1,3 +1,5 @@
+import CardNumber from '../domain/CardNumber'
+
 class SalonTexts {
   static onlyCardChecking (): string {
     return `Twoje konto jest powiązane z salonem.
@@ -10,13 +12,13 @@ Zrób zdjęcie karty Beauty Zazero lub podaj mi jej numer.`
 Nie akceptuj jej!`
   }
 
-  static outdatedCard (cardNumber: number): string {
-    return `Karta ${cardNumber} jest nieważna.
+  static outdatedCard (cardNumber: CardNumber): string {
+    return `Karta ${cardNumber.asNumber()} jest nieważna.
 Nie akceptuj jej!`
   }
 
-  static notYetActivatedCard (cardNumber: number): string {
-    return `Karta ${cardNumber} nie została jeszcze aktywowana.
+  static notYetActivatedCard (cardNumber: CardNumber): string {
+    return `Karta ${cardNumber.asNumber()} nie została jeszcze aktywowana.
 Zanim ją zaakceptujesz, poproś by klientka zagadała do bota i aktywowała kartę.`
   }
 
@@ -50,10 +52,12 @@ Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
   }
 
   static acceptCard (): string {
+    // eslint-disable-next-line max-len
     return 'Akceptuj kartę na usługi: regulacja brwi, henna brwi, laminacja brwi, depilacja wąsika, laminacja rzęs, henna rzęs, przedłużanie rzęs 1:1. Zapisz w versum, że użyta była karta Beauty ZAZERO.'
   }
 
   static customerPictureUpdateAborted (): string {
+    // eslint-disable-next-line max-len
     return 'Oczekiwałem zdjęcia klientki. Przerywam proces weryfikacji, w razie potrzeby zacznij go od początku, skanując kartę klientki.'
   }
 

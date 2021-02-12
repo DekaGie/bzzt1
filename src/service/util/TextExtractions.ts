@@ -1,5 +1,5 @@
 import { Optional } from 'typescript-optional'
-import CustomerIntent from './CustomerIntent'
+import CustomerIntent from '../domain/CustomerIntent'
 
 class TextExtractions {
   static cardNumber (text: string): Optional<number> {

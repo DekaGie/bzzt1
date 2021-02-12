@@ -1,3 +1,5 @@
+import { Optional } from 'typescript-optional'
+
 class Promises {
   static safely<T> (asyncFunction: () => Promise<T>): Promise<T> {
     try {
@@ -23,6 +25,12 @@ class Promises {
 
   static flatAll<T> (left: Promise<Array<T>>, right: Promise<Array<T>>): Promise<Array<T>> {
     return left.then((leftArray) => right.then((rightArray) => leftArray.concat(rightArray)))
+  }
+
+  static optionalFallback<T> (
+    left: () => Promise<Optional<T>>, right: () => Promise<Optional<T>>
+  ): Promise<Optional<T>> {
+    return left().then((optionalLeft) => (optionalLeft.isPresent() ? optionalLeft : right()))
   }
 }
 

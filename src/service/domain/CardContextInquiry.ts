@@ -1,4 +1,4 @@
-import Inquiry from './spi/Inquiry'
+import Inquiry from '../spi/Inquiry'
 
 interface CardContextInquiry extends Inquiry {
 

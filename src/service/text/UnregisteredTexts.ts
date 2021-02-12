@@ -1,3 +1,5 @@
+import CardNumber from '../domain/CardNumber'
+
 class UnregisteredTexts {
   static welcome (): string {
     return 'Hej, nieznajoma!'
@@ -20,12 +22,12 @@ W takim razie zrób zdjęcie swojej karty Beauty Zazero lub podaj mi jej numer.`
     return `Hmmm, ${cardNumber}?\nTo nie wygląda jak prawidłowy numer karty Beauty Zazero :(`
   }
 
-  static cardActivatedByAnother (cardNumber: number): string {
-    return `Niestety, karta ${cardNumber} została już aktywowana przez kogoś innego.`
+  static cardActivatedByAnother (cardNumber: CardNumber): string {
+    return `Niestety, karta ${cardNumber.asNumber()} została już aktywowana przez kogoś innego.`
   }
 
-  static outdatedCard (cardNumber: number): string {
-    return `Niestety, karta ${cardNumber} jest nieważna.`
+  static outdatedCard (cardNumber: CardNumber): string {
+    return `Niestety, karta ${cardNumber.asNumber()} jest nieważna.`
   }
 
   static ensureActivationPrompt (): string {
