@@ -24,8 +24,12 @@ import CheckedCard from '../domain/CheckedCard'
 import CardHoldingCustomer from '../domain/CardHoldingCustomer'
 import CustomerPersonalData from '../domain/CustomerPersonalData'
 import CardNumber from '../domain/CardNumber'
+import Logger from '../../log/Logger'
+import Loggers from '../../log/Loggers'
 
 class SalonAssistant implements ActorAssistant<SalonActor> {
+  private static readonly LOG: Logger = Loggers.get(SalonAssistant.name)
+
   private static readonly SHOULD_SEND_PICTURE_FOR_CARD: StateCategoryId =
     new StateCategoryId(SalonAssistant.name, 'SHOULD_SEND_PICTURE_FOR_CARD');
 
@@ -177,7 +181,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
     actor: SalonActor, cardNumber: CardNumber, pictureUrl: ImageUrl
   ): Promise<Array<Reaction>> {
     // TODO: mail
-    console.log(`Received picture for ${cardNumber}: ${pictureUrl.asString()}`)
+    SalonAssistant.LOG.info(`Received picture for ${cardNumber}: ${pictureUrl.asString()}`)
     this.pictureAwaitingCardNumber(actor).clear()
     return Promises.flatAll(
       Results.many(Reactions.plainText(SalonTexts.thanksForCustomerPicture())),
@@ -225,13 +229,13 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
 
   private handleVerified (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
     // TODO: uslugi
-    console.log(`Salon ${actor.displayName()} akceptuje ${cardNumber}`)
+    SalonAssistant.LOG.info(`Salon ${actor.displayName()} akceptuje ${cardNumber}`)
     return Results.many(Reactions.plainText(SalonTexts.acceptCard()))
   }
 
   private handleVerificationFailure (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
     // TODO: mail
-    console.log(`Salon ${actor.displayName()} nie akceptuje ${cardNumber}`)
+    SalonAssistant.LOG.info(`Salon ${actor.displayName()} nie akceptuje ${cardNumber}`)
     return Results.many(Reactions.plainText(SalonTexts.rejectCard()))
   }
 }

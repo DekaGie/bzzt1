@@ -16,8 +16,12 @@ import Reactions from './spi/Reactions'
 import GpTexts from './text/GpTexts'
 import ActorAssistant from './api/ActorAssistant'
 import Results from './util/Results'
+import Logger from '../log/Logger'
+import Loggers from '../log/Loggers'
 
 class BzzBot implements FbMessengerBot {
+  private static readonly LOG: Logger = Loggers.get(BzzBot.name)
+
   private readonly actorAssistant: ActorAssistant<ActorId>
 
   constructor (actorAssistant: ActorAssistant<ActorId>) {
@@ -40,17 +44,16 @@ class BzzBot implements FbMessengerBot {
     this.actorAssistant.handle(new ActorId(psid), inquiry)
       .catch(
         (error) => {
-          console.error(`while handling ${psid} inquiring ${JSON.stringify(inquiry)}`)
-          console.error(error)
+          BzzBot.LOG.error(`while handling ${psid} inquiring ${JSON.stringify(inquiry)}`, error)
           return Results.many(Reactions.plainText(GpTexts.unexpectedError()))
         }
       )
       .then(
         (reactions) => {
           if (reactions.length === 0) {
-            console.warn(`no reaction to ${psid} inquiring ${JSON.stringify(inquiry)}`)
+            BzzBot.LOG.warn(`no reaction to ${psid} inquiring ${JSON.stringify(inquiry)}`)
           } else {
-            console.log(`reactions to ${psid} inquiring ${JSON.stringify(inquiry)}: ${JSON.stringify(reactions)}`)
+            BzzBot.LOG.info(`reactions to ${psid} inquiring ${JSON.stringify(inquiry)}: ${JSON.stringify(reactions)}`)
           }
           const groups: Array<Array<Reaction>> = Arrays.sequenceGroupBy(
             reactions, (reaction) => reaction.type

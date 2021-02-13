@@ -4,11 +4,14 @@ import Level from './Level'
 import LoggerBackend from './LoggerBackend'
 import EsClient from '../es/EsClient'
 import EsIndex from '../es/EsIndex'
+import Logger from './Logger'
 
 class EsLoggerBackend implements LoggerBackend {
-  private index: Promise<EsIndex>;
+  private readonly index: Promise<EsIndex>;
 
-  constructor (client: EsClient) {
+  private readonly own: Logger;
+
+  constructor (client: EsClient, own: LoggerBackend) {
     this.index = client.createIndex(
       'logs',
       {
@@ -20,6 +23,7 @@ class EsLoggerBackend implements LoggerBackend {
         stack: { type: 'text' }
       }
     )
+    this.own = new Logger(own, EsLoggerBackend.name)
   }
 
   log (name: string, at: Instant, level: Level, message: string, optionalThrown: Optional<Error>): void {
@@ -38,9 +42,7 @@ class EsLoggerBackend implements LoggerBackend {
       )
     ).catch(
       (error) => {
-        console.error(`while logging: ${Level[level]} ${message}`)
-        optionalThrown.ifPresent((thrown) => console.error(thrown))
-        console.error(error)
+        this.own.error('could not send log', error)
       }
     )
   }

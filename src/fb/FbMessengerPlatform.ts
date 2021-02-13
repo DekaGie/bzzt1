@@ -6,8 +6,12 @@ import FbMessengerBot from './FbMessengerBot'
 import FbMessengerOutbox from './FbMessengerOutbox'
 import FbClient from './impl/FbClient'
 import FbClientOutbox from './impl/FbClientOutbox'
+import Logger from '../log/Logger'
+import Loggers from '../log/Loggers'
 
 class FbMessengerPlatform {
+  private static readonly LOG: Logger = Loggers.get(FbMessengerPlatform.name)
+
   private readonly outbox: FbMessengerOutbox;
 
   private readonly bot: FbMessengerBot;
@@ -29,8 +33,7 @@ class FbMessengerPlatform {
         try {
           this.handleEvent(event)
         } catch (error) {
-          console.error(`while handling event: ${event}`)
-          console.error(error)
+          FbMessengerPlatform.LOG.error(`while handling event: ${event}`, error)
         }
       }
     )
@@ -65,7 +68,7 @@ class FbMessengerPlatform {
           .ifPresentOrElse(
             (url) => this.bot.onImage(psid, url, this.outbox),
             () => {
-              console.error(`while expecting a certain message: ${message}`)
+              FbMessengerPlatform.LOG.warn(`while expecting a certain message: ${message}`)
             }
           )
       )

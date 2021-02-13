@@ -1,5 +1,9 @@
 import App from './App'
 import 'reflect-metadata'
+import Loggers from './log/Loggers'
+import Logger from './log/Logger'
+
+const logger: Logger = Loggers.get('boot-up')
 
 App.start(
   {
@@ -12,10 +16,9 @@ App.start(
   }
 ).then(
   () => {
-    console.log('server is listening')
+    logger.info('boot-up successful')
   },
   (error) => {
-    console.error('while starting:')
-    console.error(error)
+    logger.error('could not boot-up', error)
   }
 )

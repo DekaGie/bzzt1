@@ -11,12 +11,22 @@ import BarcodeParser from './service/api/BarcodeParser'
 import Loggers from './log/Loggers'
 import EsLoggerBackend from './log/EsLoggerBackend'
 import EsClient from './es/EsClient'
+import ConsoleLoggerBackend from './log/ConsoleLoggerBackend'
+import BroadcastLoggerBackend from './log/BroadcastLoggerBackend'
+import Logger from './log/Logger'
 
 class App {
+  private static readonly LOG: Logger = Loggers.get(App.name);
+
   static start (config: Config): Promise<void> {
+    App.LOG.info(`starting with ${JSON.stringify(config)}`)
     const esClient: EsClient = new EsClient(config.esUrl)
-    Loggers.initialize(new EsLoggerBackend(esClient))
-    Loggers.get(App.name).error('ojej')
+    Loggers.initialize(
+      new BroadcastLoggerBackend(
+        new EsLoggerBackend(esClient, new ConsoleLoggerBackend()),
+        new ConsoleLoggerBackend()
+      )
+    )
     const locator: ServiceLocator = new ServiceLocator()
     locator.es.provide(esClient)
     locator.fbClient.provide(new FbClient(config.accessToken))

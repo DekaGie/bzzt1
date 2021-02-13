@@ -1,8 +1,12 @@
 import axios from 'axios'
 import FormData from 'form-data'
 import JsonElement from '../json/JsonElement'
+import Logger from '../log/Logger'
+import Loggers from '../log/Loggers'
 
 class OcrSpace {
+  private static readonly LOG: Logger = Loggers.get(OcrSpace.name)
+
   private readonly apiKey: string;
 
   constructor (apiKey: string) {
@@ -33,8 +37,7 @@ class OcrSpace {
       .then(
         (response) => {
           if (response.status !== 200) {
-            console.error(`while expecting successful OCR response for ${imageUrl}:`)
-            console.error(response)
+            OcrSpace.LOG.warn(`while expecting successful OCR response for ${imageUrl}: ${JSON.stringify(response)}`)
             return []
           }
           return new JsonElement('$', response.data).asObject()
@@ -44,8 +47,7 @@ class OcrSpace {
       )
       .catch(
         (error) => {
-          console.error(`while OCRing ${imageUrl}:`)
-          console.error(error)
+          OcrSpace.LOG.error(`while OCRing ${imageUrl}`, error)
           return []
         }
       )

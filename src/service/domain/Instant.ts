@@ -18,7 +18,7 @@ class Instant {
   }
 
   toString (): string {
-    return new Date(this.es * 1000).toISOString()
+    return new Date(this.asEms()).toISOString()
   }
 
   static now (): Instant {

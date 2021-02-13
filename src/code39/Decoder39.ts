@@ -8,6 +8,8 @@ import LineParser from './LineParser'
 import Combinator from './Combinator'
 import Weighted from './Weighted'
 import LineEnhancers from './LineEnhancers'
+import Loggers from '../log/Loggers'
+import Logger from '../log/Logger'
 
 interface Settings {
 
@@ -21,6 +23,8 @@ interface Settings {
 }
 
 class Decoder39 {
+  private static readonly LOG: Logger = Loggers.get(Decoder39.name)
+
   private static readonly MIN_DIMENSION: number = 200
 
   private static readonly MIN_LINE_LENGTH: number = 1600;
@@ -69,7 +73,7 @@ class Decoder39 {
 
   decode (image: Image): Optional<number> {
     if (image.width() < Decoder39.MIN_DIMENSION || image.height() < Decoder39.MIN_DIMENSION) {
-      console.warn(`rejecting too small image: ${image.width()} x ${image.height()}`)
+      Decoder39.LOG.warn(`rejecting too small image: ${image.width()} x ${image.height()}`)
       return Optional.empty()
     }
 
@@ -85,7 +89,7 @@ class Decoder39 {
         const thresholdedLine: Array<boolean> = settings.thresholder.toBits(enhancedLine)
         const detected: Optional<number> = Decoder39.LINE_PARSER.parse(thresholdedLine)
         if (detected.isPresent()) {
-          console.log(
+          Decoder39.LOG.info(
             `found ${detected.get()} in ${new Date().getTime() - started} ms, `
               + `by ${JSON.stringify(settings, (key, value) => (key === '' ? value : value.toString()))} `
               + `having probability ${probability}, after unrealized ${cumulative} `

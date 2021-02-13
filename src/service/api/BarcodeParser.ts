@@ -4,8 +4,12 @@ import ImageDownloader from '../../img/ImageDownloader'
 import ImageUrl from '../domain/ImageUrl'
 import OcrSpace from '../../ocr/OcrSpace'
 import Decoder39 from '../../code39/Decoder39'
+import Logger from '../../log/Logger'
+import Loggers from '../../log/Loggers'
 
 class BarcodeParser {
+  private static readonly LOG: Logger = Loggers.get(BarcodeParser.name)
+
   private static readonly DIGIT_FIXES: JMap<string, number> = (() => {
     const map: JMap<string, number> = new HashMap()
     map.put('O', 0)
@@ -48,7 +52,7 @@ class BarcodeParser {
         (image) => {
           const decoded: Optional<number> = this.decoder.decode(image)
           if (decoded.isPresent()) {
-            console.info(`parsed locally ${decoded.get()}: ${imageUrl}`)
+            BarcodeParser.LOG.info(`parsed locally ${decoded.get()}: ${imageUrl}`)
             return decoded
           }
           return this.ocrSpace.recognize(imageUrl)
@@ -56,9 +60,8 @@ class BarcodeParser {
         }
       )
       .catch(
-        (err) => {
-          console.error(`when parsing barcode on ${imageUrl}:`)
-          console.error(err)
+        (error) => {
+          BarcodeParser.LOG.error(`when parsing barcode on ${imageUrl}`, error)
           return Optional.empty()
         }
       )
@@ -76,7 +79,7 @@ class BarcodeParser {
       return Optional.empty()
     }
     if (numbers.length > 1) {
-      console.log(`found multiple ${this.digitCount}-digit numbers, returning random from: ${numbers}`)
+      BarcodeParser.LOG.info(`found multiple ${this.digitCount}-digit numbers, returning random from: ${numbers}`)
     }
     return Optional.of(numbers[Math.floor(Math.random() * numbers.length)])
   }

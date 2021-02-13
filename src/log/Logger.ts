@@ -13,8 +13,16 @@ class Logger {
     this.name = name
   }
 
-  error (message: string, thrown?: Error | undefined) {
-    this.backend.log(this.name, Instant.now(), Level.ERROR, message, Optional.ofNullable(thrown))
+  info (message: string): void {
+    this.backend.log(this.name, Instant.now(), Level.INFO, message, Optional.empty())
+  }
+
+  warn (message: string, thrown?: Error | undefined): void {
+    this.backend.log(this.name, Instant.now(), Level.WARN, message, Optional.ofNullable(thrown))
+  }
+
+  error (message: string, thrown: Error): void {
+    this.backend.log(this.name, Instant.now(), Level.ERROR, message, Optional.of(thrown))
   }
 }
 

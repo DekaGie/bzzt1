@@ -2,8 +2,12 @@ import { Optional } from 'typescript-optional'
 import FbClient from './FbClient'
 import FbMessengerOutbox from '../FbMessengerOutbox'
 import FbGenericTemplate from '../FbGenericTemplate'
+import Logger from '../../log/Logger'
+import Loggers from '../../log/Loggers'
 
 class FbClientOutbox implements FbMessengerOutbox {
+  private static readonly LOG: Logger = Loggers.get(FbClientOutbox.name)
+
   private readonly fbClient: FbClient;
 
   constructor (fbClient: FbClient) {
@@ -47,8 +51,7 @@ class FbClientOutbox implements FbMessengerOutbox {
   private send (psid: string, message: object): Promise<void> {
     return this.fbClient.send(psid, message).catch(
       (error) => {
-        console.error(`while sending to ${psid}: ${JSON.stringify(message)}`)
-        console.error(error)
+        FbClientOutbox.LOG.error(`while sending to ${psid}: ${JSON.stringify(message)}`, error)
       }
     )
   }
