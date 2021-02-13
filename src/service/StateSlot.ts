@@ -1,23 +1,15 @@
 import { Optional } from 'typescript-optional'
+import Converter from '../util/Converter'
 
-class StateSlot<T> {
-  private value: Optional<T>;
+interface StateSlot<T> {
 
-  constructor () {
-    this.value = Optional.empty()
-  }
+  set (value: T): void;
 
-  set (value: T): void {
-    this.value = Optional.of(value)
-  }
+  clear (): void;
 
-  clear (): void {
-    this.value = Optional.empty()
-  }
+  get (): Optional<T>;
 
-  get (): Optional<T> {
-    return this.value
-  }
+  convert<R> (converter: Converter<T, R>): StateSlot<R>
 }
 
 export default StateSlot

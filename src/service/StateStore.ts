@@ -2,6 +2,7 @@ import { Optional } from 'typescript-optional'
 import StateSlot from './StateSlot'
 import ActorId from './domain/ActorId'
 import StateCategoryId from './domain/StateCategoryId'
+import MemoryStateSlot from './MemoryStateSlot'
 
 class StateStore {
   private static readonly SEPARATOR: string = '|';
@@ -17,7 +18,7 @@ class StateStore {
         + StateStore.SEPARATOR + categoryId.toRepresentation()
     return Optional.ofNullable(this.memory.get(key)).orElseGet(
       () => {
-        const newSlot: StateSlot<T> = new StateSlot()
+        const newSlot: StateSlot<T> = new MemoryStateSlot()
         this.memory.set(key, newSlot)
         return newSlot
       }

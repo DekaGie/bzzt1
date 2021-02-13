@@ -97,7 +97,7 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
           topImage: Optional.empty(),
           title: UnregisteredTexts.ensureActivationPrompt(),
           subtitle: Optional.of(UnregisteredTexts.ensureActivationQuestion()),
-          choices: [Choices.inquiry(GpTexts.yes(), { type: 'ACTIVATE', cardNumber })]
+          choices: [Choices.inquiry(GpTexts.yes(), { type: 'ACTIVATE', cardNumber } as CardContextInquiry)]
         }
       )
     )

@@ -26,6 +26,7 @@ import CustomerPersonalData from '../domain/CustomerPersonalData'
 import CardNumber from '../domain/CardNumber'
 import Logger from '../../log/Logger'
 import Loggers from '../../log/Loggers'
+import Converters from '../../util/Converters'
 
 class SalonAssistant implements ActorAssistant<SalonActor> {
   private static readonly LOG: Logger = Loggers.get(SalonAssistant.name)
@@ -52,7 +53,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   handle (actor: SalonActor, inquiry: Inquiry): Promise<Array<Reaction>> {
     switch (inquiry.type) {
       case 'FREE_TEXT': {
-        const pictureForCardNumber: Optional<number> = this.pictureAwaitingCardNumber(actor).get()
+        const pictureForCardNumber: Optional<CardNumber> = this.pictureAwaitingCardNumber(actor).get()
         if (pictureForCardNumber.isPresent()) {
           return this.handleFailedPictureFor(actor)
         }
@@ -65,8 +66,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
       }
       case 'IMAGE': {
         const imageInquiry: ImageInquiry = inquiry as ImageInquiry
-        const pictureForCardNumber: Optional<CardNumber> = this.pictureAwaitingCardNumber(actor)
-          .get().map((cardNumber) => new CardNumber(cardNumber))
+        const pictureForCardNumber: Optional<CardNumber> = this.pictureAwaitingCardNumber(actor).get()
         if (pictureForCardNumber.isPresent()) {
           return this.handlePictureFor(actor, pictureForCardNumber.get(), imageInquiry.imageUrl)
         }
@@ -138,11 +138,11 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
           choices: [
             Choices.inquiry(
               GpTexts.yes(),
-              { type: 'ID_VERIFICATION_SUCCESS', cardNumber: card.cardNumber }
+              SalonAssistant.cardInquiry(card.cardNumber(), 'ID_VERIFICATION_SUCCESS')
             ),
             Choices.inquiry(
               GpTexts.no(),
-              { type: 'ID_VERIFICATION_FAILURE', cardNumber: card.cardNumber }
+              SalonAssistant.cardInquiry(card.cardNumber(), 'ID_VERIFICATION_FAILURE')
             )
           ]
         }
@@ -160,11 +160,11 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
           choices: [
             Choices.inquiry(
               SalonTexts.pictureConsented(true),
-              { type: 'PICTURE_CONSENTED', cardNumber }
+              SalonAssistant.cardInquiry(cardNumber, 'PICTURE_CONSENTED')
             ),
             Choices.inquiry(
               SalonTexts.pictureConsented(false),
-              { type: 'PICTURE_NOT_CONSENTED', cardNumber }
+              SalonAssistant.cardInquiry(cardNumber, 'PICTURE_CONSENTED')
             )
           ]
         }
@@ -173,7 +173,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   }
 
   private promptForPicture (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
-    this.pictureAwaitingCardNumber(actor).set(cardNumber.asNumber())
+    this.pictureAwaitingCardNumber(actor).set(cardNumber)
     return Results.many(Reactions.plainText(SalonTexts.takePicturePrompt()))
   }
 
@@ -223,8 +223,9 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
     )
   }
 
-  private pictureAwaitingCardNumber (actor: SalonActor): StateSlot<number> {
+  private pictureAwaitingCardNumber (actor: SalonActor): StateSlot<CardNumber> {
     return this.stateStore.slot(actor.id(), SalonAssistant.SHOULD_SEND_PICTURE_FOR_CARD)
+      .convert(Converters.inverse(CardNumber.NUMBER_CONVERTER))
   }
 
   private handleVerified (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
@@ -237,6 +238,10 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
     // TODO: mail
     SalonAssistant.LOG.info(`Salon ${actor.displayName()} nie akceptuje ${cardNumber}`)
     return Results.many(Reactions.plainText(SalonTexts.rejectCard()))
+  }
+
+  private static cardInquiry (cardNumber: CardNumber, type: string): CardContextInquiry {
+    return { type, cardNumber: cardNumber.asNumber() }
   }
 }
 
