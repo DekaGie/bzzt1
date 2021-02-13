@@ -1,13 +1,15 @@
 interface Config {
-  port: number
+  port: number;
 
-  verifyToken: string
+  verifyToken: string;
 
-  accessToken: string
+  accessToken: string;
 
-  ocrSpaceApiKey: string
+  ocrSpaceApiKey: string;
 
   postgresUrl: string;
+
+  esUrl: string;
 }
 
 export default Config

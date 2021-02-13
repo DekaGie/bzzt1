@@ -9,6 +9,10 @@ class Instant {
     return this.es
   }
 
+  asEms (): number {
+    return Math.floor(this.es * 1000)
+  }
+
   isAtOrAfter (other: Instant): boolean {
     return this.es >= other.es
   }

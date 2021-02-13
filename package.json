@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@elastic/elasticsearch": "7.11.0",
     "axios": "0.21.1",
     "cubic-spline-ts": "^3.0.8",
     "express": "4.17.1",
@@ -36,7 +37,7 @@
     "@types/node": "^14.14.16",
     "@types/nodemailer": "6.4.0",
     "@types/qs": "6.9.4",
-    "@typescript-eslint/eslint-plugin": "^4.14.2",
+    "@typescript-eslint/eslint-plugin": "4.14.2",
     "@typescript-eslint/parser": "^4.11.1",
     "dotenv": "8.2.0",
     "eslint": "7.16.0",

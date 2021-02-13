@@ -7,7 +7,8 @@ App.start(
     verifyToken: process.env.VERIFY_TOKEN,
     accessToken: process.env.ACCESS_TOKEN,
     ocrSpaceApiKey: process.env.OCR_SPACE_API_KEY,
-    postgresUrl: process.env.DATABASE_URL
+    postgresUrl: process.env.DATABASE_URL,
+    esUrl: process.env.ES_URL
   }
 ).then(
   () => {

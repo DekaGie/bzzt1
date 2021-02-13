@@ -5,6 +5,7 @@ import BzzBot from './service/BzzBot'
 import FbClient from './fb/impl/FbClient'
 import StateStore from './service/StateStore'
 import BarcodeParser from './service/api/BarcodeParser'
+import EsClient from './es/EsClient'
 
 class ServiceLocator {
   readonly db: ServiceSlot<Connection>
@@ -19,8 +20,11 @@ class ServiceLocator {
 
   readonly states: ServiceSlot<StateStore>;
 
+  readonly es: ServiceSlot<EsClient>;
+
   constructor () {
     this.db = new ServiceSlot()
+    this.es = new ServiceSlot()
     this.web = new ServiceSlot()
     this.bot = new ServiceSlot()
     this.fbClient = new ServiceSlot()
