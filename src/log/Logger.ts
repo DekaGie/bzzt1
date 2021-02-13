@@ -13,6 +13,10 @@ class Logger {
     this.name = name
   }
 
+  debug (message: string): void {
+    this.backend.log(this.name, Instant.now(), Level.DEBUG, message, Optional.empty())
+  }
+
   info (message: string): void {
     this.backend.log(this.name, Instant.now(), Level.INFO, message, Optional.empty())
   }

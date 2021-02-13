@@ -3,7 +3,8 @@ enum Level {
 
   ERROR,
   WARN,
-  INFO
+  INFO,
+  DEBUG
 }
 
 export default Level

@@ -89,7 +89,7 @@ class Decoder39 {
         const thresholdedLine: Array<boolean> = settings.thresholder.toBits(enhancedLine)
         const detected: Optional<number> = Decoder39.LINE_PARSER.parse(thresholdedLine)
         if (detected.isPresent()) {
-          Decoder39.LOG.info(
+          Decoder39.LOG.debug(
             `found ${detected.get()} in ${new Date().getTime() - started} ms, `
               + `by ${JSON.stringify(settings, (key, value) => (key === '' ? value : value.toString()))} `
               + `having probability ${probability}, after unrealized ${cumulative} `

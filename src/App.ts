@@ -19,7 +19,7 @@ class App {
   private static readonly LOG: Logger = Loggers.get(App.name);
 
   static start (config: Config): Promise<void> {
-    App.LOG.info(`starting with ${JSON.stringify(config)}`)
+    App.LOG.debug(`starting with ${JSON.stringify(config)}`)
     const esClient: EsClient = new EsClient(config.esUrl)
     Loggers.initialize(
       new BroadcastLoggerBackend(

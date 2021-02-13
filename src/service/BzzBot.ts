@@ -53,7 +53,7 @@ class BzzBot implements FbMessengerBot {
           if (reactions.length === 0) {
             BzzBot.LOG.warn(`no reaction to ${psid} inquiring ${JSON.stringify(inquiry)}`)
           } else {
-            BzzBot.LOG.info(`reactions to ${psid} inquiring ${JSON.stringify(inquiry)}: ${JSON.stringify(reactions)}`)
+            BzzBot.LOG.debug(`reactions to ${psid} inquiring ${JSON.stringify(inquiry)}: ${JSON.stringify(reactions)}`)
           }
           const groups: Array<Array<Reaction>> = Arrays.sequenceGroupBy(
             reactions, (reaction) => reaction.type

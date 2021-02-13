@@ -52,7 +52,7 @@ class BarcodeParser {
         (image) => {
           const decoded: Optional<number> = this.decoder.decode(image)
           if (decoded.isPresent()) {
-            BarcodeParser.LOG.info(`parsed locally ${decoded.get()}: ${imageUrl}`)
+            BarcodeParser.LOG.debug(`parsed locally ${decoded.get()}: ${imageUrl}`)
             return decoded
           }
           return this.ocrSpace.recognize(imageUrl)
@@ -79,7 +79,7 @@ class BarcodeParser {
       return Optional.empty()
     }
     if (numbers.length > 1) {
-      BarcodeParser.LOG.info(`found multiple ${this.digitCount}-digit numbers, returning random from: ${numbers}`)
+      BarcodeParser.LOG.debug(`found multiple ${this.digitCount}-digit numbers, returning random from: ${numbers}`)
     }
     return Optional.of(numbers[Math.floor(Math.random() * numbers.length)])
   }

@@ -180,8 +180,8 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   private handlePictureFor (
     actor: SalonActor, cardNumber: CardNumber, pictureUrl: ImageUrl
   ): Promise<Array<Reaction>> {
-    // TODO: mail
-    SalonAssistant.LOG.info(`Received picture for ${cardNumber}: ${pictureUrl.asString()}`)
+    // TODO: event
+    SalonAssistant.LOG.info(`received picture for ${cardNumber}: ${pictureUrl.asString()}`)
     this.pictureAwaitingCardNumber(actor).clear()
     return Promises.flatAll(
       Results.many(Reactions.plainText(SalonTexts.thanksForCustomerPicture())),
@@ -230,13 +230,14 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
 
   private handleVerified (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
     // TODO: uslugi
-    SalonAssistant.LOG.info(`Salon ${actor.displayName()} akceptuje ${cardNumber}`)
+    // TODO: event
+    SalonAssistant.LOG.info(`salon ${actor.displayName()} accepted ${cardNumber}`)
     return Results.many(Reactions.plainText(SalonTexts.acceptCard()))
   }
 
   private handleVerificationFailure (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
     // TODO: mail
-    SalonAssistant.LOG.info(`Salon ${actor.displayName()} nie akceptuje ${cardNumber}`)
+    SalonAssistant.LOG.info(`salon ${actor.displayName()} did not accept ${cardNumber}`)
     return Results.many(Reactions.plainText(SalonTexts.rejectCard()))
   }
 
