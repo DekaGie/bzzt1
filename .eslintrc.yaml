@@ -16,6 +16,8 @@
       - error
       - vars: all
         args: none
+    newline-per-chained-call:
+      - off
     class-methods-use-this:
       - off
     generator-star-spacing:

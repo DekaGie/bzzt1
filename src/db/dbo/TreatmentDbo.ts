@@ -1,7 +1,8 @@
 import {
-  Column, Entity, JoinColumn, ManyToOne, PrimaryColumn
+  Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryColumn
 } from 'typeorm'
 import PacketDbo from './PacketDbo'
+import SalonTreatmentDbo from './SalonTreatmentDbo'
 
 @Entity()
 class TreatmentDbo {
@@ -22,6 +23,12 @@ class TreatmentDbo {
   )
   @JoinColumn()
   packet: PacketDbo;
+
+  @OneToMany(
+    () => SalonTreatmentDbo,
+    (salonTreatment) => salonTreatment.treatment
+  )
+  salonTreatments: Array<SalonTreatmentDbo>;
 
   @Column(
     {

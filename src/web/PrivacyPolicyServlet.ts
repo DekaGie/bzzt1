@@ -6,7 +6,7 @@ class PrivacyPolicyServlet implements HttpServlet {
     return Promise.resolve(
       {
         code: 200,
-        body: 'Aplikacja Beauty ZAZERO nie przetwarza żadnych danych osobowych użytkowników.'
+        body: 'Aplikacja Beauty Zazero nie przetwarza żadnych danych osobowych użytkowników.'
       }
     )
   }

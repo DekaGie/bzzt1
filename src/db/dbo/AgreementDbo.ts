@@ -2,6 +2,7 @@ import {
   Column, Entity, OneToMany, PrimaryColumn
 } from 'typeorm'
 import AgreementPacketDbo from './AgreementPacketDbo'
+import CardDbo from './CardDbo'
 
 @Entity()
 class AgreementDbo {
@@ -16,6 +17,12 @@ class AgreementDbo {
     (agreementPacket) => agreementPacket.agreement
   )
   agreementPackets: Array<AgreementPacketDbo>;
+
+  @OneToMany(
+    () => CardDbo,
+    (card) => card.agreement
+  )
+  cards: Array<CardDbo>;
 
   @Column(
     {

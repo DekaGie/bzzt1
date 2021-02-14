@@ -7,6 +7,10 @@ abstract class AnyId {
 
   abstract typeName (): string
 
+  equalTo (other: this): boolean {
+    return this.typeName() === other.typeName() && this.representation === other.representation
+  }
+
   toRepresentation (): string {
     return this.representation
   }

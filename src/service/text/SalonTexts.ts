@@ -51,11 +51,6 @@ Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
     return 'Czy to ta klientka?'
   }
 
-  static acceptCard (): string {
-    // eslint-disable-next-line max-len
-    return 'Akceptuj kartę na usługi: regulacja brwi, henna brwi, laminacja brwi, depilacja wąsika, laminacja rzęs, henna rzęs, przedłużanie rzęs 1:1. Zapisz w versum, że użyta była karta Beauty ZAZERO.'
-  }
-
   static customerPictureUpdateAborted (): string {
     // eslint-disable-next-line max-len
     return 'Oczekiwałem zdjęcia klientki. Przerywam proces weryfikacji, w razie potrzeby zacznij go od początku, skanując kartę klientki.'
@@ -63,6 +58,57 @@ Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
 
   static rejectCard (): string {
     return 'Nie akceptuj karty! Operator został powiadomiony o próbie nadużycia ze strony klientki.'
+  }
+
+  static pickTreatmentPrompt (): string {
+    return 'Na jaką przyszła usługę?'
+  }
+
+  static pickTreatmentHint (): string {
+    return 'W pakiecie ma za 0 PLN:'
+  }
+
+  static treatmentPickingContinuation (count: number): string {
+    return count === 1 ? 'Ok, była na tej jednej usłudze?'
+      : `Ok, była na tych ${count} usługach?`
+  }
+
+  static treatmentPickingContinuationChoice (): string {
+    return 'Jeśli więcej, przesuń w prawo ->'
+  }
+
+  static noTreatmentAvailable (): string {
+    return `Ojej :(
+Nie oferujecie w swoim salonie żadnych usług dostępnych w pakiecie tej klientki...
+Nie możesz zaakceptować tej karty.`
+  }
+
+  static pickMoreTreatmentPrompt (): string {
+    return 'Przyszła na więcej :)'
+  }
+
+  static pickMoreTreatmentHint (): string {
+    return 'Na co jeszcze?'
+  }
+
+  static treatmentPickingConfirm (): string {
+    return 'Tak, to wszystko.'
+  }
+
+  static treatmentPickingCancel (): string {
+    return 'Nie, pomyłka, anuluj.'
+  }
+
+  static flowCancelled (): string {
+    return `Rozumiem.
+Przerywam proces rozliczania usług, w razie potrzeby zacznij go od początku, skanując kartę klientki.`
+  }
+
+  static flowSuccessful (customerName: string, treatmentNames: Array<string>): string {
+    const listing: string = treatmentNames.map((name) => `\n- ${name}`).join('')
+    return `Świetnie!
+Zanotowałem, że ${customerName} przyszła do Was na usługi: ${listing}
+Jeśli coś się nie zgadza, wyjaśniaj błąd kontaktując się z operatorem Beauty Zazero.`
   }
 }
 

@@ -18,6 +18,8 @@ import CardChecker from './api/CardChecker'
 import StateStore from './StateStore'
 import BarcodeParser from './api/BarcodeParser'
 import ActorResolver from './api/ActorResolver'
+import TreatmentResolver from './api/TreatmentResolver'
+import TreatmentRepository from '../db/repo/TreatmentRepository'
 
 class BzzBotFactory {
   static create (config: Config, locator: ServiceLocator) {
@@ -31,9 +33,12 @@ class BzzBotFactory {
     const salonRegistrationRepository: SalonRegistrationRepository = locator.db.refer()
       .getCustomRepository(SalonRegistrationRepository)
     const cardRegistrator: CardRegistrator = new CardRegistrator(cardChecker, cardRegistrationRepository)
+    const treatmentResolver: TreatmentResolver = new TreatmentResolver(
+      locator.db.refer().getCustomRepository(TreatmentRepository)
+    )
     const businessAssistant: ActorAssistant<ActorId> = new BusinessAssistant(
       new ActorResolver(salonRegistrationRepository, cardRegistrationRepository),
-      new SalonAssistant(barcodeParser, cardChecker, stateStore),
+      new SalonAssistant(barcodeParser, cardChecker, stateStore, treatmentResolver),
       new CustomerAssistant(),
       new UnregisteredActorAssistant(barcodeParser, cardRegistrator, stateStore)
     )

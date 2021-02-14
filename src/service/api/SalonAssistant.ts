@@ -27,6 +27,10 @@ import CardNumber from '../domain/CardNumber'
 import Logger from '../../log/Logger'
 import Loggers from '../../log/Loggers'
 import Converters from '../../util/Converters'
+import TreatmentResolver from './TreatmentResolver'
+import TreatmentName from '../domain/TreatmentName'
+import TreatmentsContextInquiry from '../domain/TreatmentContextInquiry'
+import Choice, { InquiryChoice } from '../spi/Choice'
 
 class SalonAssistant implements ActorAssistant<SalonActor> {
   private static readonly LOG: Logger = Loggers.get(SalonAssistant.name)
@@ -40,14 +44,18 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
 
   private readonly stateStore: StateStore;
 
+  private readonly treatmentResolver: TreatmentResolver;
+
   constructor (
     barcodeParser: BarcodeParser,
     cardChecker: CardChecker,
-    stateStore: StateStore
+    stateStore: StateStore,
+    treatmentResolver: TreatmentResolver
   ) {
     this.barcodeParser = barcodeParser
     this.cardChecker = cardChecker
     this.stateStore = stateStore
+    this.treatmentResolver = treatmentResolver
   }
 
   handle (actor: SalonActor, inquiry: Inquiry): Promise<Array<Reaction>> {
@@ -94,6 +102,27 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
       case 'ID_VERIFICATION_FAILURE': {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
         return this.handleVerificationFailure(actor, new CardNumber(cardInquiry.cardNumber))
+      }
+      case 'TREATMENTS_PICKED': {
+        // eslint-disable-next-line max-len
+        const contextInquiry: CardContextInquiry & TreatmentsContextInquiry = inquiry as CardContextInquiry & TreatmentsContextInquiry
+        return this.handleTreatmentsPicked(
+          actor,
+          new CardNumber(contextInquiry.cardNumber),
+          contextInquiry.treatmentNames.map((name) => new TreatmentName(name))
+        )
+      }
+      case 'TREATMENTS_CONFIRMED': {
+        // eslint-disable-next-line max-len
+        const contextInquiry: CardContextInquiry & TreatmentsContextInquiry = inquiry as CardContextInquiry & TreatmentsContextInquiry
+        return this.handleTreatmentsConfirmed(
+          actor,
+          new CardNumber(contextInquiry.cardNumber),
+          contextInquiry.treatmentNames.map((name) => new TreatmentName(name))
+        )
+      }
+      case 'TREATMENTS_CANCELLED': {
+        return this.handleTreatmentsCancelled()
       }
       default: {
         return Results.many()
@@ -203,8 +232,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
             title: SalonTexts.idVerificationPrompt(),
             subtitle: Optional.of(
               SalonTexts.idVerificationQuestion(
-                card.holder().get().personalData().get()
-                  .fullName()
+                card.holder().get().personalData().get().fullName()
               )
             ),
             choices: [
@@ -229,20 +257,136 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   }
 
   private handleVerified (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
-    // TODO: uslugi
-    // TODO: event
-    SalonAssistant.LOG.info(`salon ${actor.displayName()} accepted ${cardNumber}`)
-    return Results.many(Reactions.plainText(SalonTexts.acceptCard()))
+    return this.listTreatmentChoices(actor, cardNumber, []).then(
+      (choices) => {
+        if (choices.length === 0) {
+          return Results.many(Reactions.plainText(SalonTexts.noTreatmentAvailable()) as Reaction)
+        }
+        return Results.many(
+          Reactions.choice(
+            {
+              topImage: Optional.empty(),
+              title: SalonTexts.pickTreatmentPrompt(),
+              subtitle: Optional.of(SalonTexts.pickTreatmentHint()),
+              choices
+            }
+          )
+        )
+      }
+    )
+  }
+
+  private handleTreatmentsPicked (
+    actor: SalonActor, cardNumber: CardNumber, picks: Array<TreatmentName>
+  ): Promise<Array<Reaction>> {
+    return this.listTreatmentChoices(actor, cardNumber, picks).then(
+      (moreChoices) => {
+        const finalChoices: Array<Choice> = [
+          Choices.inquiry(
+            SalonTexts.treatmentPickingConfirm(),
+            SalonAssistant.cardTreatmentsInquiry(
+              cardNumber, picks, 'TREATMENTS_CONFIRMED'
+            )
+          ),
+          Choices.inquiry(
+            SalonTexts.treatmentPickingCancel(),
+            { type: 'TREATMENTS_CANCELLED' }
+          )
+        ]
+        if (moreChoices.length === 0) {
+          return Results.many(
+            Reactions.choice(
+              {
+                topImage: Optional.empty(),
+                title: SalonTexts.treatmentPickingContinuation(picks.length),
+                subtitle: Optional.empty(),
+                choices: finalChoices
+              }
+            )
+          )
+        }
+        return Results.many(
+          Reactions.choice(
+            {
+              topImage: Optional.empty(),
+              title: SalonTexts.treatmentPickingContinuation(picks.length),
+              subtitle: Optional.of(SalonTexts.treatmentPickingContinuationChoice()),
+              choices: finalChoices
+            }
+          ),
+          Reactions.choice(
+            {
+              topImage: Optional.empty(),
+              title: SalonTexts.pickMoreTreatmentPrompt(),
+              subtitle: Optional.of(SalonTexts.pickMoreTreatmentHint()),
+              choices: moreChoices
+            }
+          )
+        )
+      }
+    )
+  }
+
+  private listTreatmentChoices (
+    actor: SalonActor, cardNumber: CardNumber, picks: Array<TreatmentName>
+  ): Promise<Array<InquiryChoice>> {
+    return this.treatmentResolver.findOffered(actor.name(), cardNumber).then(
+      (treatments) => treatments.filter(
+        (treatment) => picks.filter(
+          (pick) => pick.equalTo(treatment.name())
+        ).length === 0
+      ).map(
+        (treatment) => Choices.inquiry(
+          treatment.fullName(),
+          SalonAssistant.cardTreatmentsInquiry(
+            cardNumber, picks.concat(treatment.name()), 'TREATMENTS_PICKED'
+          )
+        )
+      )
+    )
+  }
+
+  private handleTreatmentsConfirmed (
+    actor: SalonActor, cardNumber: CardNumber, treatments: Array<TreatmentName>
+  ): Promise<Array<Reaction>> {
+    return Promise.all(
+      [
+        this.cardChecker.get(cardNumber),
+        this.treatmentResolver.get(treatments)
+      ]
+    ).then(
+      (fetches) => {
+        // TODO: event
+        SalonAssistant.LOG.info(`salon ${actor.name()} successfully accepted ${cardNumber} for ${treatments}`)
+        const customerName: string = fetches[0].holder().get().personalData().get().fullName()
+        const treatmentNames: Array<string> = fetches[1].map((name) => name.fullName())
+        return Results.many(Reactions.plainText(SalonTexts.flowSuccessful(customerName, treatmentNames)))
+      }
+    )
+  }
+
+  private handleTreatmentsCancelled (): Promise<Array<Reaction>> {
+    return Results.many(Reactions.plainText(SalonTexts.flowCancelled()))
   }
 
   private handleVerificationFailure (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
-    // TODO: mail
-    SalonAssistant.LOG.info(`salon ${actor.displayName()} did not accept ${cardNumber}`)
+    // TODO: event
+    SalonAssistant.LOG.info(`salon ${actor.name()} did not accept ${cardNumber}`)
     return Results.many(Reactions.plainText(SalonTexts.rejectCard()))
   }
 
   private static cardInquiry (cardNumber: CardNumber, type: string): CardContextInquiry {
     return { type, cardNumber: cardNumber.asNumber() }
+  }
+
+  private static cardTreatmentsInquiry (
+    cardNumber: CardNumber, treatmentNames: Array<TreatmentName>, type: string
+  ): CardContextInquiry & TreatmentsContextInquiry {
+    return {
+      type,
+      cardNumber: cardNumber.asNumber(),
+      treatmentNames: treatmentNames.map((name) => name.toRepresentation())
+    }
   }
 }
 

@@ -1,4 +1,7 @@
-import { Column, Entity, PrimaryColumn } from 'typeorm'
+import {
+  Column, Entity, OneToMany, PrimaryColumn
+} from 'typeorm'
+import SalonTreatmentDbo from './SalonTreatmentDbo'
 
 @Entity()
 class SalonDbo {
@@ -8,14 +11,19 @@ class SalonDbo {
   @Column(
     {
       type: 'text',
-      nullable: false,
-      default: '' // TODO: remove after deploy
+      nullable: false
     }
   )
   displayName: string;
 
   @Column({ type: 'text', nullable: false })
   salonSecret: string;
+
+  @OneToMany(
+    () => SalonTreatmentDbo,
+    (salonTreatment) => salonTreatment.salon
+  )
+  salonTreatments: Array<SalonTreatmentDbo>;
 
   @Column(
     {
