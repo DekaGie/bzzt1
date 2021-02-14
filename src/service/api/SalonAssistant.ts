@@ -193,7 +193,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
             ),
             Choices.inquiry(
               SalonTexts.pictureConsented(false),
-              SalonAssistant.cardInquiry(cardNumber, 'PICTURE_CONSENTED')
+              SalonAssistant.cardInquiry(cardNumber, 'PICTURE_NOT_CONSENTED')
             )
           ]
         }
@@ -238,11 +238,11 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
             choices: [
               Choices.inquiry(
                 GpTexts.yes(),
-                { type: 'ID_VERIFICATION_SUCCESS', cardNumber }
+                SalonAssistant.cardInquiry(cardNumber, 'ID_VERIFICATION_SUCCESS')
               ),
               Choices.inquiry(
                 GpTexts.no(),
-                { type: 'ID_VERIFICATION_FAILURE', cardNumber }
+                SalonAssistant.cardInquiry(cardNumber, 'ID_VERIFICATION_FAILURE')
               )
             ]
           }
