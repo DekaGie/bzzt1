@@ -257,6 +257,12 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   }
 
   private handleVerified (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
+    if (2 + 2 < 5) { // TODO: fix max 3 buttons!
+      return Results.many(
+        Reactions.plainText('Super, akceptuj kartę na wszystkie usługi :)')
+      )
+    }
+
     return this.listTreatmentChoices(actor, cardNumber, []).then(
       (choices) => {
         if (choices.length === 0) {
