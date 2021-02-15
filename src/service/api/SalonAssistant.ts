@@ -161,9 +161,10 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
     return Results.many(
       Reactions.choice(
         {
-          topImage: pictureUrl,
+          topImage: pictureUrl.get(),
+          imageAsSquare: true,
           title: personalData.get().fullName(),
-          subtitle: Optional.of(SalonTexts.pictureVerificationQuestion()),
+          subtitle: SalonTexts.pictureVerificationQuestion(),
           choices: [
             Choices.inquiry(
               GpTexts.yes(),
@@ -183,9 +184,8 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
     return Results.many(
       Reactions.choice(
         {
-          topImage: Optional.empty(),
           title: fullName,
-          subtitle: Optional.of(SalonTexts.missingPictureQuestion()),
+          subtitle: SalonTexts.missingPictureQuestion(),
           choices: [
             Choices.inquiry(
               SalonTexts.pictureConsented(true),
@@ -228,12 +228,9 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
       this.cardChecker.get(cardNumber).then(
         (card) => Reactions.choice(
           {
-            topImage: Optional.empty(),
             title: SalonTexts.idVerificationPrompt(),
-            subtitle: Optional.of(
-              SalonTexts.idVerificationQuestion(
-                card.holder().get().personalData().get().fullName()
-              )
+            subtitle: SalonTexts.idVerificationQuestion(
+              card.holder().get().personalData().get().fullName()
             ),
             choices: [
               Choices.inquiry(
@@ -290,9 +287,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
           return Results.many(
             Reactions.choice(
               {
-                topImage: Optional.empty(),
                 title: SalonTexts.treatmentPickingContinuation(picks.length),
-                subtitle: Optional.empty(),
                 choices: finalChoices
               }
             )
@@ -302,9 +297,8 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
           Results.many(
             Reactions.choice(
               {
-                topImage: Optional.empty(),
                 title: SalonTexts.treatmentPickingContinuation(picks.length),
-                subtitle: Optional.of(SalonTexts.treatmentPickingContinuationChoice()),
+                subtitle: SalonTexts.treatmentPickingContinuationChoice(),
                 choices: finalChoices
               }
             )
@@ -375,9 +369,8 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
       reactions.push(
         Reactions.choice(
           {
-            topImage: Optional.empty(),
             title,
-            subtitle: Optional.of(SalonTexts.pickTreatmentHint(left)),
+            subtitle: SalonTexts.pickTreatmentHint(left),
             choices: pageChoices
           }
         )

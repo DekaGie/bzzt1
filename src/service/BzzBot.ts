@@ -1,3 +1,4 @@
+import { Optional } from 'typescript-optional'
 import FbMessengerOutbox from '../fb/FbMessengerOutbox'
 import ActorId from './domain/ActorId'
 import FbMessengerBot from '../fb/FbMessengerBot'
@@ -83,6 +84,7 @@ class BzzBot implements FbMessengerBot {
               {
                 topImage: { url: richImage.imageUrl.asString(), squareRatio: true },
                 title: richImage.caption,
+                subtitle: Optional.ofNullable(richImage.subtitle).orNull(),
                 buttons: []
               }
             )
@@ -96,16 +98,16 @@ class BzzBot implements FbMessengerBot {
           richChoices.map(
             (richChoice) => (
               {
-                topImage: richChoice.topImage.map(
+                topImage: Optional.ofNullable(richChoice.topImage).map(
                   (imageUrl) => (
                     {
                       url: imageUrl.asString(),
-                      squareRatio: false
+                      squareRatio: Optional.ofNullable(richChoice.imageAsSquare).orElse(false)
                     }
                   )
                 ).orNull(),
                 title: richChoice.title,
-                subtitle: richChoice.subtitle.orNull(),
+                subtitle: Optional.ofNullable(richChoice.subtitle).orNull(),
                 buttons: richChoice.choices.map(
                   (choice) => {
                     switch (choice.type) {

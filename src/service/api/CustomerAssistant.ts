@@ -50,9 +50,8 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
     return Results.many(
       Reactions.choice(
         {
-          topImage: Optional.empty(),
           title: CustomerTexts.welcome(actor.calloutName()),
-          subtitle: Optional.of(CustomerTexts.intentPrompt()),
+          subtitle: CustomerTexts.intentPrompt(),
           choices: [
             Choices.inquiry(CustomerTexts.showPartners(), { type: 'SHOW_PARTNERS' }),
             Choices.inquiry(CustomerTexts.showSubscriptions(), { type: 'SHOW_SUBSCRIPTIONS' }),
@@ -76,9 +75,9 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
         return Results.many(
           Reactions.choice(
             {
-              topImage: Optional.of(StaticImageUrls.POWER_BANNER),
+              topImage: StaticImageUrls.POWER_BANNER,
               title: 'Power Brows',
-              subtitle: Optional.of('Brwi: wszystko. Rzęsy: Laminacja, Henna.'),
+              subtitle: 'Brwi: wszystko. Rzęsy: Laminacja, Henna.',
               choices: [
                 Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/power-brows'),
                 Choices.phone(CustomerTexts.phoneBooking(), '+48736842624')
@@ -87,9 +86,9 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
           ),
           Reactions.choice(
             {
-              topImage: Optional.of(StaticImageUrls.GINGER_BANNER),
+              topImage: StaticImageUrls.GINGER_BANNER,
               title: 'Ginger Zone',
-              subtitle: Optional.of('Rzęsy: Przedłużanie 1:1, Laminacja, Henna. Brwi: wszystko.'),
+              subtitle: 'Rzęsy: Przedłużanie 1:1, Laminacja, Henna. Brwi: wszystko.',
               choices: [
                 Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/martyna-krawczyk-beauty'),
                 Choices.phone(CustomerTexts.phoneBooking(), '+48691120992')
@@ -103,21 +102,17 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
         return Results.many(
           Reactions.choice(
             {
-              topImage: Optional.of(StaticImageUrls.BROWS),
+              topImage: StaticImageUrls.BROWS,
               title: 'Brwi',
-              subtitle: Optional.of(
-                'Regulacja, Laminacja, Henna, Depilacja twarzy woskiem.'
-              ),
+              subtitle: 'Regulacja, Laminacja, Henna, Depilacja twarzy woskiem.',
               choices: []
             }
           ),
           Reactions.choice(
             {
-              topImage: Optional.of(StaticImageUrls.LASHES),
+              topImage: StaticImageUrls.LASHES,
               title: 'Rzęsy',
-              subtitle: Optional.of(
-                'Laminacja, Henna, Przedłużanie 1:1.'
-              ),
+              subtitle: 'Laminacja, Henna, Przedłużanie 1:1.',
               choices: []
             }
           )

@@ -50,9 +50,9 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
         return Results.many(
           Reactions.choice(
             {
-              topImage: Optional.of(StaticImageUrls.HORIZONTAL_LOGO),
+              topImage: StaticImageUrls.HORIZONTAL_LOGO,
               title: UnregisteredTexts.welcome(),
-              subtitle: Optional.of(UnregisteredTexts.intentPrompt()),
+              subtitle: UnregisteredTexts.intentPrompt(),
               choices: [
                 Choices.inquiry(UnregisteredTexts.activateCard(), { type: 'PROMPT_ACTIVATE' }),
                 Choices.phone(GpTexts.customerService(), '+48662097978')
@@ -94,9 +94,8 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
     return Results.many(
       Reactions.choice(
         {
-          topImage: Optional.empty(),
           title: UnregisteredTexts.ensureActivationPrompt(),
-          subtitle: Optional.of(UnregisteredTexts.ensureActivationQuestion()),
+          subtitle: UnregisteredTexts.ensureActivationQuestion(),
           choices: [Choices.inquiry(GpTexts.yes(), { type: 'ACTIVATE', cardNumber } as CardContextInquiry)]
         }
       )

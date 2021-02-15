@@ -1,15 +1,16 @@
-import { Optional } from 'typescript-optional'
 import Reaction from './Reaction'
 import ImageUrl from '../domain/ImageUrl'
 import Choice from './Choice'
 
 interface RichChoiceReactionData {
 
-  topImage: Optional<ImageUrl>,
+  topImage?: ImageUrl | undefined,
+
+  imageAsSquare?: boolean | undefined,
 
   title: string,
 
-  subtitle: Optional<string>,
+  subtitle?: string | undefined,
 
   choices: Array<Choice>
 }

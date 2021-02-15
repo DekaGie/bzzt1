@@ -1,4 +1,3 @@
-import { Optional } from 'typescript-optional'
 import Instant from '../domain/Instant'
 import StaticImageUrls from '../util/StaticImageUrls'
 import Reactions from '../spi/Reactions'
@@ -59,9 +58,9 @@ class CardRegistrator {
     return Results.many(
       Reactions.choice(
         {
-          topImage: Optional.of(StaticImageUrls.WELCOME),
+          topImage: StaticImageUrls.WELCOME,
           title: UnregisteredTexts.activationSuccess(card.employerName()),
-          subtitle: Optional.of(UnregisteredTexts.whatNext()),
+          subtitle: UnregisteredTexts.whatNext(),
           choices: [
             Choices.inquiry(CustomerTexts.showTutorial(), { type: 'SHOW_TUTORIAL' }),
             Choices.inquiry(CustomerTexts.showPartners(), { type: 'SHOW_PARTNERS' }),

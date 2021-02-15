@@ -7,6 +7,8 @@ interface RichImageReaction extends Reaction {
 
   caption: string,
 
+  subtitle?: string | undefined,
+
   imageUrl: ImageUrl
 }
 
