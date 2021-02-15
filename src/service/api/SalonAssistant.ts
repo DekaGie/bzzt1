@@ -257,26 +257,13 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   }
 
   private handleVerified (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
-    if (2 + 2 < 5) { // TODO: fix max 3 buttons!
-      return Results.many(
-        Reactions.plainText('Super, akceptuj kartę na wszystkie usługi :)')
-      )
-    }
-
     return this.listTreatmentChoices(actor, cardNumber, []).then(
       (choices) => {
         if (choices.length === 0) {
-          return Results.many(Reactions.plainText(SalonTexts.noTreatmentAvailable()) as Reaction)
+          return Results.many(Reactions.plainText(SalonTexts.noTreatmentAvailable()))
         }
-        return Results.many(
-          Reactions.choice(
-            {
-              topImage: Optional.empty(),
-              title: SalonTexts.pickTreatmentPrompt(),
-              subtitle: Optional.of(SalonTexts.pickTreatmentHint()),
-              choices
-            }
-          )
+        return SalonAssistant.pageTreatmentChoices(
+          SalonTexts.pickTreatmentPrompt(false), choices
         )
       }
     )
@@ -311,22 +298,19 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
             )
           )
         }
-        return Results.many(
-          Reactions.choice(
-            {
-              topImage: Optional.empty(),
-              title: SalonTexts.treatmentPickingContinuation(picks.length),
-              subtitle: Optional.of(SalonTexts.treatmentPickingContinuationChoice()),
-              choices: finalChoices
-            }
+        return Promises.flatAll(
+          Results.many(
+            Reactions.choice(
+              {
+                topImage: Optional.empty(),
+                title: SalonTexts.treatmentPickingContinuation(picks.length),
+                subtitle: Optional.of(SalonTexts.treatmentPickingContinuationChoice()),
+                choices: finalChoices
+              }
+            )
           ),
-          Reactions.choice(
-            {
-              topImage: Optional.empty(),
-              title: SalonTexts.pickMoreTreatmentPrompt(),
-              subtitle: Optional.of(SalonTexts.pickMoreTreatmentHint()),
-              choices: moreChoices
-            }
+          SalonAssistant.pageTreatmentChoices(
+            SalonTexts.pickTreatmentPrompt(true), moreChoices
           )
         )
       }
@@ -379,6 +363,27 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
     // TODO: event
     SalonAssistant.LOG.info(`salon ${actor.name()} did not accept ${cardNumber}`)
     return Results.many(Reactions.plainText(SalonTexts.rejectCard()))
+  }
+
+  private static pageTreatmentChoices (
+    title: string, choices: Array<InquiryChoice>
+  ): Promise<Array<Reaction>> {
+    const reactions: Array<Reaction> = []
+    for (let fromIndex = 0; fromIndex < choices.length; fromIndex += Choices.LIMIT) {
+      const pageChoices: Array<InquiryChoice> = choices.slice(fromIndex, fromIndex + Choices.LIMIT)
+      const left: number = choices.length - fromIndex - pageChoices.length
+      reactions.push(
+        Reactions.choice(
+          {
+            topImage: Optional.empty(),
+            title,
+            subtitle: Optional.of(SalonTexts.pickTreatmentHint(left)),
+            choices: pageChoices
+          }
+        )
+      )
+    }
+    return Results.many(...reactions)
   }
 
   private static cardInquiry (cardNumber: CardNumber, type: string): CardContextInquiry {

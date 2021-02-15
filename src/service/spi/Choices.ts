@@ -2,6 +2,8 @@ import { InquiryChoice, LinkChoice, PhoneChoice } from './Choice'
 import Inquiry from './Inquiry'
 
 class Choices {
+  static readonly LIMIT: number = 3;
+
   static inquiry<T extends Inquiry> (label: string, inquiry: T): InquiryChoice {
     return { type: 'INQUIRY', label, inquiry }
   }

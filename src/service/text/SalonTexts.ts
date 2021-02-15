@@ -60,12 +60,12 @@ Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
     return 'Nie akceptuj karty! Operator został powiadomiony o próbie nadużycia ze strony klientki.'
   }
 
-  static pickTreatmentPrompt (): string {
-    return 'Na jaką przyszła usługę?'
+  static pickTreatmentPrompt (adding: boolean): string {
+    return adding ? 'Jaka jeszcze usługa?' : 'Na jaką przyszła usługę?'
   }
 
-  static pickTreatmentHint (): string {
-    return 'W pakiecie ma za 0 PLN:'
+  static pickTreatmentHint (moreRight: number): string {
+    return moreRight === 0 ? 'To wszystkie w jej pakiecie:' : `Jeszcze ${moreRight} w prawo ->`
   }
 
   static treatmentPickingContinuation (count: number): string {
@@ -74,21 +74,13 @@ Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
   }
 
   static treatmentPickingContinuationChoice (): string {
-    return 'Jeśli więcej, przesuń w prawo ->'
+    return 'Na jeszcze jakiejś? Przesuń w prawo ->'
   }
 
   static noTreatmentAvailable (): string {
     return `Ojej :(
 Nie oferujecie w swoim salonie żadnych usług dostępnych w pakiecie tej klientki...
 Nie możesz zaakceptować tej karty.`
-  }
-
-  static pickMoreTreatmentPrompt (): string {
-    return 'Przyszła na więcej :)'
-  }
-
-  static pickMoreTreatmentHint (): string {
-    return 'Na co jeszcze?'
   }
 
   static treatmentPickingConfirm (): string {
