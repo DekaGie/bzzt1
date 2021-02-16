@@ -31,6 +31,7 @@ import TreatmentResolver from './TreatmentResolver'
 import TreatmentName from '../domain/TreatmentName'
 import TreatmentsContextInquiry from '../domain/TreatmentContextInquiry'
 import Choice, { InquiryChoice } from '../spi/Choice'
+import CardUpdater from './CardUpdater'
 
 class SalonAssistant implements ActorAssistant<SalonActor> {
   private static readonly LOG: Logger = Loggers.get(SalonAssistant.name)
@@ -42,6 +43,8 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
 
   private readonly cardChecker: CardChecker;
 
+  private readonly cardUpdater: CardUpdater;
+
   private readonly stateStore: StateStore;
 
   private readonly treatmentResolver: TreatmentResolver;
@@ -49,11 +52,13 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   constructor (
     barcodeParser: BarcodeParser,
     cardChecker: CardChecker,
+    cardUpdater: CardUpdater,
     stateStore: StateStore,
     treatmentResolver: TreatmentResolver
   ) {
     this.barcodeParser = barcodeParser
     this.cardChecker = cardChecker
+    this.cardUpdater = cardUpdater
     this.stateStore = stateStore
     this.treatmentResolver = treatmentResolver
   }
@@ -212,6 +217,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
     // TODO: event
     SalonAssistant.LOG.info(`received picture for ${cardNumber}: ${pictureUrl.asString()}`)
     this.pictureAwaitingCardNumber(actor).clear()
+    this.cardUpdater.updateHolderPicture(cardNumber, pictureUrl)
     return Promises.flatAll(
       Results.many(Reactions.plainText(SalonTexts.thanksForCustomerPicture())),
       this.promptForIdVerification(cardNumber)
