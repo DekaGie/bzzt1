@@ -8,13 +8,11 @@ class SalonDbo {
   @PrimaryColumn()
   salonName: string;
 
-  @Column(
-    {
-      type: 'text',
-      nullable: false
-    }
-  )
+  @Column({ type: 'text', nullable: false })
   displayName: string;
+
+  @Column({ type: 'text', nullable: false, default: '' }) // TODO: remove after migration
+  pictureUrl: string;
 
   @Column({ type: 'text', nullable: false })
   salonSecret: string;
