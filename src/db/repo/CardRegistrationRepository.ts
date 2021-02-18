@@ -7,6 +7,7 @@ class CardRegistrationRepository extends Repository<CardRegistrationDbo> {
     return this.createQueryBuilder('registration')
       .leftJoinAndSelect('registration.card', 'card')
       .leftJoinAndSelect('card.agreement', 'agreement')
+      .leftJoinAndSelect('registration.identification', 'identification')
       .where('registration.actorId = :actorId')
       .setParameters({ actorId })
       .getOne()

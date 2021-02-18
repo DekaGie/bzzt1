@@ -1,8 +1,7 @@
 import { EntityRepository, Repository } from 'typeorm'
-import TreatmentDbo from '../dbo/TreatmentDbo'
 import PacketDbo from '../dbo/PacketDbo'
 
-@EntityRepository(TreatmentDbo)
+@EntityRepository(PacketDbo)
 class PacketRepository extends Repository<PacketDbo> {
   findAvailable (cardNumber: number): Promise<Array<PacketDbo>> {
     return this.createQueryBuilder('packet')

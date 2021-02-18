@@ -12,7 +12,7 @@ class SalonRepository extends Repository<SalonDbo> {
 
   findAvailable (cardNumber: number): Promise<Array<SalonDbo>> {
     return this.createQueryBuilder('salon')
-      .leftJoin('salon.salonTreatments', 'salonTreatment')
+      .leftJoinAndSelect('salon.salonTreatments', 'salonTreatment')
       .leftJoinAndSelect('salonTreatment.treatment', 'treatment')
       .leftJoinAndSelect('treatment.packet', 'packet')
       .leftJoin('packet.agreementPackets', 'agreementPacket')
