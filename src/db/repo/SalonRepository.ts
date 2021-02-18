@@ -9,6 +9,19 @@ class SalonRepository extends Repository<SalonDbo> {
       .setParameters({ salonName })
       .getOne()
   }
+
+  findAvailable (cardNumber: number): Promise<Array<SalonDbo>> {
+    return this.createQueryBuilder('salon')
+      .leftJoin('salon.salonTreatments', 'salonTreatment')
+      .leftJoinAndSelect('salonTreatment.treatment', 'treatment')
+      .leftJoinAndSelect('treatment.packet', 'packet')
+      .leftJoin('packet.agreementPackets', 'agreementPacket')
+      .leftJoin('agreementPacket.agreement', 'agreement')
+      .leftJoin('agreement.cards', 'card')
+      .where('card.cardNumber = :cardNumber')
+      .setParameters({ cardNumber })
+      .getMany()
+  }
 }
 
 export default SalonRepository

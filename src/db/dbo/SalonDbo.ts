@@ -14,6 +14,12 @@ class SalonDbo {
   @Column({ type: 'text', nullable: false, default: '' }) // TODO: remove after migration
   pictureUrl: string;
 
+  @Column({ type: 'text', nullable: false, default: '' }) // TODO: remove after migration
+  bookingUrl: string;
+
+  @Column({ type: 'text', nullable: false, default: '' }) // TODO: remove after migration
+  contactUrl: string;
+
   @Column({ type: 'text', nullable: false })
   salonSecret: string;
 

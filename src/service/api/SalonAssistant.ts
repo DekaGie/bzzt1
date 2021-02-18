@@ -159,14 +159,14 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
     if (!personalData.isPresent()) {
       return this.handleVerified(actor, card.cardNumber())
     }
-    const pictureUrl: Optional<ImageUrl> = personalData.get().pictureUrl()
-    if (!pictureUrl.isPresent()) {
+    const picture: Optional<ImageUrl> = personalData.get().picture()
+    if (!picture.isPresent()) {
       return this.handleNoPicture(card.cardNumber(), personalData.get().fullName())
     }
     return Results.many(
       Reactions.choice(
         {
-          topImage: pictureUrl.get(),
+          topImage: picture.get(),
           imageAsSquare: true,
           title: personalData.get().fullName(),
           subtitle: SalonTexts.pictureVerificationQuestion(),
@@ -212,12 +212,12 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   }
 
   private handlePictureFor (
-    actor: SalonActor, cardNumber: CardNumber, pictureUrl: ImageUrl
+    actor: SalonActor, cardNumber: CardNumber, picture: ImageUrl
   ): Promise<Array<Reaction>> {
     // TODO: event
-    SalonAssistant.LOG.info(`received picture for ${cardNumber}: ${pictureUrl.asString()}`)
+    SalonAssistant.LOG.info(`received picture for ${cardNumber}: ${picture.asString()}`)
     this.pictureAwaitingCardNumber(actor).clear()
-    this.cardUpdater.updateHolderPicture(cardNumber, pictureUrl)
+    this.cardUpdater.updateHolderPicture(cardNumber, picture)
     return Promises.flatAll(
       Results.many(Reactions.plainText(SalonTexts.thanksForCustomerPicture())),
       this.promptForIdVerification(cardNumber)

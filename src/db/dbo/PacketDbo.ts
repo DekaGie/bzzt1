@@ -12,7 +12,7 @@ class PacketDbo {
   @Column({ type: 'text', nullable: false })
   displayName: string;
 
-  @Column({ type: 'text', nullable: false, default: '' }) // TODO: remove after migration
+  @Column({ type: 'text', nullable: false })
   pictureUrl: string;
 
   @OneToMany(

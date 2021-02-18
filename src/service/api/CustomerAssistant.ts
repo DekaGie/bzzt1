@@ -12,8 +12,21 @@ import Reaction from '../spi/Reaction'
 import TextExtractions from '../util/TextExtractions'
 import Results from '../util/Results'
 import CustomerActor from '../domain/CustomerActor'
+import SalonResolver from './SalonResolver'
+import PacketResolver from './PacketResolver'
+import AvailableSalon from '../domain/AvailableSalon'
+import AvailablePacket from '../domain/AvailablePacket'
 
 class CustomerAssistant implements ActorAssistant<CustomerActor> {
+  private readonly salonResolver: SalonResolver;
+
+  private readonly packetResolver: PacketResolver;
+
+  constructor (salonResolver: SalonResolver, packetResolver: PacketResolver) {
+    this.salonResolver = salonResolver
+    this.packetResolver = packetResolver
+  }
+
   handle (actor: CustomerActor, inquiry: Inquiry): Promise<Array<Reaction>> {
     switch (inquiry.type) {
       case 'FREE_TEXT': {
@@ -22,7 +35,7 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
         if (!intent.isPresent()) {
           return this.handleUnknown(actor)
         }
-        return this.handleIntent(intent.get())
+        return this.handleIntent(actor, intent.get())
       }
       case 'IMAGE': {
         return Results.many(
@@ -32,13 +45,13 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
         )
       }
       case 'SHOW_PARTNERS': {
-        return this.handleIntent(CustomerIntent.SHOW_PARTNERS)
+        return this.handleIntent(actor, CustomerIntent.SHOW_PARTNERS)
       }
       case 'SHOW_SUBSCRIPTIONS': {
-        return this.handleIntent(CustomerIntent.SHOW_SUBSCRIPTIONS)
+        return this.handleIntent(actor, CustomerIntent.SHOW_SUBSCRIPTIONS)
       }
       case 'SHOW_TUTORIAL': {
-        return this.handleIntent(CustomerIntent.SHOW_TUTORIAL)
+        return this.handleIntent(actor, CustomerIntent.SHOW_TUTORIAL)
       }
       default: {
         return Results.many()
@@ -62,7 +75,7 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
     )
   }
 
-  private handleIntent (intent: CustomerIntent): Promise<Array<Reaction>> {
+  private handleIntent (actor: CustomerActor, intent: CustomerIntent): Promise<Array<Reaction>> {
     switch (intent) {
       case CustomerIntent.SHOW_TUTORIAL: {
         return Results.many<Reaction>(
@@ -71,50 +84,16 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
         )
       }
       case CustomerIntent.SHOW_PARTNERS: {
-        // TODO: from DB
-        return Results.many(
-          Reactions.choice(
-            {
-              topImage: StaticImageUrls.POWER_BANNER,
-              title: 'Power Brows',
-              subtitle: 'Brwi: wszystko. Rzęsy: Laminacja, Henna.',
-              choices: [
-                Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/power-brows'),
-                Choices.phone(CustomerTexts.phoneBooking(), '+48736842624')
-              ]
-            }
-          ),
-          Reactions.choice(
-            {
-              topImage: StaticImageUrls.GINGER_BANNER,
-              title: 'Ginger Zone',
-              subtitle: 'Rzęsy: Przedłużanie 1:1, Laminacja, Henna. Brwi: wszystko.',
-              choices: [
-                Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/martyna-krawczyk-beauty'),
-                Choices.phone(CustomerTexts.phoneBooking(), '+48691120992')
-              ]
-            }
+        return this.salonResolver.findAvailable(actor.cardNumber()).then(
+          (salons) => Results.many(
+            ...salons.map((salon) => CustomerAssistant.toSalonReaction(salon))
           )
         )
       }
       case CustomerIntent.SHOW_SUBSCRIPTIONS: {
-        // TODO: from DB
-        return Results.many(
-          Reactions.choice(
-            {
-              topImage: StaticImageUrls.BROWS,
-              title: 'Brwi',
-              subtitle: 'Regulacja, Laminacja, Henna, Depilacja twarzy woskiem.',
-              choices: []
-            }
-          ),
-          Reactions.choice(
-            {
-              topImage: StaticImageUrls.LASHES,
-              title: 'Rzęsy',
-              subtitle: 'Laminacja, Henna, Przedłużanie 1:1.',
-              choices: []
-            }
+        return this.packetResolver.findAvailable(actor.cardNumber()).then(
+          (packets) => Results.many(
+            ...packets.map((packet) => CustomerAssistant.toPacketReaction(packet))
           )
         )
       }
@@ -122,6 +101,37 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
         return Results.many()
       }
     }
+  }
+
+  private static toSalonReaction (salon: AvailableSalon): Reaction {
+    return Reactions.choice(
+      {
+        topImage: salon.picture(),
+        title: salon.displayName(),
+        subtitle: `${salon.availablePacketNames().join(', ')}.`,
+        choices: [
+          Choices.link(CustomerTexts.onlineBooking(), salon.bookingLink()),
+          Choices.phone(CustomerTexts.phoneBooking(), salon.contactLink())
+
+          // Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/power-brows'),
+          // Choices.phone(CustomerTexts.phoneBooking(), '+48736842624')
+
+          //       Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/martyna-krawczyk-beauty'),
+          //       Choices.phone(CustomerTexts.phoneBooking(), '+48691120992')
+        ]
+      }
+    )
+  }
+
+  private static toPacketReaction (packet: AvailablePacket): Reaction {
+    return Reactions.choice(
+      {
+        topImage: packet.picture(),
+        title: packet.displayName(),
+        subtitle: `${packet.availableTreatmentNames().join(', ')}.`,
+        choices: []
+      }
+    )
   }
 }
 

@@ -13,17 +13,17 @@ class CardUpdater {
     this.identificationRepository = identificationRepository
   }
 
-  updateHolderPicture (cardNumber: CardNumber, pictureUrl: ImageUrl): void {
+  updateHolderPicture (cardNumber: CardNumber, picture: ImageUrl): void {
     this.identificationRepository.updatePictureUrlByCardNumber(
-      cardNumber.asNumber(), pictureUrl.asString()
+      cardNumber.asNumber(), picture.asString()
     ).then(
       (result) => {
         if (!result) {
-          CardUpdater.LOG.warn(`could not update ${cardNumber} picture ${pictureUrl}`)
+          CardUpdater.LOG.warn(`could not update ${cardNumber} picture ${picture}`)
         }
       },
       (error) => {
-        CardUpdater.LOG.error(`while updating ${cardNumber} picture ${pictureUrl}`, error)
+        CardUpdater.LOG.error(`while updating ${cardNumber} picture ${picture}`, error)
       }
     )
   }

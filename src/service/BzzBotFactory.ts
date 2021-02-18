@@ -22,6 +22,9 @@ import TreatmentResolver from './api/TreatmentResolver'
 import TreatmentRepository from '../db/repo/TreatmentRepository'
 import CardUpdater from './api/CardUpdater'
 import IdentificationRepository from '../db/repo/IdentificationRepository'
+import SalonResolver from './api/SalonResolver'
+import PacketResolver from './api/PacketResolver'
+import PacketRepository from '../db/repo/PacketRepository'
 
 class BzzBotFactory {
   static create (config: Config, locator: ServiceLocator) {
@@ -37,22 +40,25 @@ class BzzBotFactory {
       .getCustomRepository(CardRegistrationRepository)
     const salonRegistrationRepository: SalonRegistrationRepository = locator.db.refer()
       .getCustomRepository(SalonRegistrationRepository)
+    const salonRepository: SalonRepository = locator.db.refer()
+      .getCustomRepository(SalonRepository)
+    const packetRepository: PacketRepository = locator.db.refer()
+      .getCustomRepository(PacketRepository)
     const cardRegistrator: CardRegistrator = new CardRegistrator(cardChecker, cardRegistrationRepository)
     const treatmentResolver: TreatmentResolver = new TreatmentResolver(
       locator.db.refer().getCustomRepository(TreatmentRepository)
     )
+    const salonResolver: SalonResolver = new SalonResolver(salonRepository)
+    const packetResolver: PacketResolver = new PacketResolver(packetRepository)
     const businessAssistant: ActorAssistant<ActorId> = new BusinessAssistant(
       new ActorResolver(salonRegistrationRepository, cardRegistrationRepository),
       new SalonAssistant(barcodeParser, cardChecker, cardUpdater, stateStore, treatmentResolver),
-      new CustomerAssistant(),
+      new CustomerAssistant(salonResolver, packetResolver),
       new UnregisteredActorAssistant(barcodeParser, cardRegistrator, stateStore)
     )
     return new BzzBot(
       new AdminOverrideAssistant(
-        new SalonRegistrator(
-          locator.db.refer().getCustomRepository(SalonRepository),
-          salonRegistrationRepository
-        ),
+        new SalonRegistrator(salonRepository, salonRegistrationRepository),
         cardRegistrationRepository,
         stateStore,
         businessAssistant

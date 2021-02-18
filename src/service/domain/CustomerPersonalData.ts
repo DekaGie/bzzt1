@@ -9,7 +9,7 @@ class CustomerPersonalData {
     this.dbo = dbo
   }
 
-  pictureUrl (): Optional<ImageUrl> {
+  picture (): Optional<ImageUrl> {
     return Optional.ofNullable(this.dbo.pictureUrl)
       .map((url) => new ImageUrl(url))
   }
