@@ -13,8 +13,12 @@ import CardDbo from '../../db/dbo/CardDbo'
 import Results from '../util/Results'
 import CheckedCard from '../domain/CheckedCard'
 import CardChecker from './CardChecker'
+import Logger from '../../log/Logger'
+import Loggers from '../../log/Loggers'
 
 class CardRegistrator {
+  private static readonly LOG: Logger = Loggers.get(CardRegistrator.name)
+
   private readonly cardChecker: CardChecker;
 
   private readonly cardRegistrationRepository: CardRegistrationRepository;
@@ -51,10 +55,11 @@ class CardRegistrator {
     registration.card = CardDbo.refer(card.cardNumber().asNumber())
     registration.actorId = actorId.toRepresentation()
     return this.cardRegistrationRepository.save(registration)
-      .then(() => CardRegistrator.congratulate(card))
+      .then(() => CardRegistrator.congratulate(actorId, card))
   }
 
-  private static congratulate (card: CheckedCard): Promise<Array<Reaction>> {
+  private static congratulate (actorId: ActorId, card: CheckedCard): Promise<Array<Reaction>> {
+    CardRegistrator.LOG.warn(`card ${card.cardNumber()} just registered to ${actorId}`)
     return Results.many(
       Reactions.choice(
         {

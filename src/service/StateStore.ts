@@ -7,26 +7,26 @@ import MemoryStateSlot from './MemoryStateSlot'
 class StateStore {
   private static readonly SEPARATOR: string = '|';
 
-  private readonly memory: Map<string, StateSlot<any>>;
+  private readonly memory: Map<string, StateSlot<string>>;
 
   constructor () {
     this.memory = new Map()
   }
 
-  slot<T> (actorId: ActorId, categoryId: StateCategoryId): StateSlot<T> {
+  slot (actorId: ActorId, categoryId: StateCategoryId): StateSlot<string> {
     const key: string = actorId.toRepresentation()
         + StateStore.SEPARATOR + categoryId.toRepresentation()
     return Optional.ofNullable(this.memory.get(key)).orElseGet(
       () => {
-        const newSlot: StateSlot<T> = new MemoryStateSlot()
+        const newSlot: StateSlot<string> = new MemoryStateSlot()
         this.memory.set(key, newSlot)
         return newSlot
       }
     )
   }
 
-  allOf (actorId: ActorId): Map<StateCategoryId, any> {
-    const result: Map<StateCategoryId, any> = new Map()
+  allOf (actorId: ActorId): Map<StateCategoryId, string> {
+    const result: Map<StateCategoryId, string> = new Map()
     const prefix: string = actorId.toRepresentation() + StateStore.SEPARATOR
     this.memory.forEach(
       (value, key) => {

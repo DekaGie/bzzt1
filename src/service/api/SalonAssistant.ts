@@ -29,15 +29,13 @@ import Loggers from '../../log/Loggers'
 import Converters from '../../util/Converters'
 import TreatmentResolver from './TreatmentResolver'
 import TreatmentName from '../domain/TreatmentName'
-import TreatmentsContextInquiry from '../domain/TreatmentContextInquiry'
+import TreatmentContextInquiry from '../domain/TreatmentContextInquiry'
 import Choice, { InquiryChoice } from '../spi/Choice'
 import CardUpdater from './CardUpdater'
+import BuiltVisit from '../domain/BuiltVisit'
 
 class SalonAssistant implements ActorAssistant<SalonActor> {
   private static readonly LOG: Logger = Loggers.get(SalonAssistant.name)
-
-  private static readonly SHOULD_SEND_PICTURE_FOR_CARD: StateCategoryId =
-    new StateCategoryId(SalonAssistant.name, 'SHOULD_SEND_PICTURE_FOR_CARD');
 
   private readonly barcodeParser: BarcodeParser;
 
@@ -70,6 +68,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
         if (pictureForCardNumber.isPresent()) {
           return this.handleFailedPictureFor(actor)
         }
+        this.builtVisit(actor).clear()
         const freeTextInquiry: FreeTextInquiry = inquiry as FreeTextInquiry
         const cardNumber: Optional<number> = TextExtractions.cardNumber(freeTextInquiry.freeText)
         if (!cardNumber.isPresent()) {
@@ -83,6 +82,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
         if (pictureForCardNumber.isPresent()) {
           return this.handlePictureFor(actor, pictureForCardNumber.get(), imageInquiry.imageUrl)
         }
+        this.builtVisit(actor).clear()
         return this.barcodeParser.parse(imageInquiry.imageUrl).then(
           (cardNumber) => {
             if (!cardNumber.isPresent()) {
@@ -108,25 +108,36 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
         const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
         return this.handleVerificationFailure(actor, new CardNumber(cardInquiry.cardNumber))
       }
-      case 'TREATMENTS_PICKED': {
+      case 'TREATMENT_PICKED': {
+        const visitSlot: StateSlot<BuiltVisit> = this.builtVisit(actor)
+        if (visitSlot.get().isEmpty()) {
+          return Results.many()
+        }
         // eslint-disable-next-line max-len
-        const contextInquiry: CardContextInquiry & TreatmentsContextInquiry = inquiry as CardContextInquiry & TreatmentsContextInquiry
+        const contextInquiry: CardContextInquiry & TreatmentContextInquiry = inquiry as CardContextInquiry & TreatmentContextInquiry
+        const newVisit: BuiltVisit = visitSlot.get().get()
+          .with(new TreatmentName(contextInquiry.treatmentName))
+        visitSlot.set(newVisit)
         return this.handleTreatmentsPicked(
           actor,
           new CardNumber(contextInquiry.cardNumber),
-          contextInquiry.treatmentNames.map((name) => new TreatmentName(name))
+          newVisit.treatmentNames()
         )
       }
       case 'TREATMENTS_CONFIRMED': {
-        // eslint-disable-next-line max-len
-        const contextInquiry: CardContextInquiry & TreatmentsContextInquiry = inquiry as CardContextInquiry & TreatmentsContextInquiry
+        const visitSlot: StateSlot<BuiltVisit> = this.builtVisit(actor)
+        const visit: Optional<BuiltVisit> = visitSlot.get()
+        if (visit.isEmpty()) {
+          return Results.many()
+        }
+        visitSlot.clear()
+        const cardInquiry: CardContextInquiry = inquiry as CardContextInquiry
         return this.handleTreatmentsConfirmed(
-          actor,
-          new CardNumber(contextInquiry.cardNumber),
-          contextInquiry.treatmentNames.map((name) => new TreatmentName(name))
+          actor, new CardNumber(cardInquiry.cardNumber), visit.get().treatmentNames()
         )
       }
       case 'TREATMENTS_CANCELLED': {
+        this.builtVisit(actor).clear()
         return this.handleTreatmentsCancelled()
       }
       default: {
@@ -255,8 +266,17 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   }
 
   private pictureAwaitingCardNumber (actor: SalonActor): StateSlot<CardNumber> {
-    return this.stateStore.slot(actor.id(), SalonAssistant.SHOULD_SEND_PICTURE_FOR_CARD)
+    return this.stateStore.slot(
+      actor.id(), new StateCategoryId(SalonAssistant.name, 'SHOULD_SEND_PICTURE_FOR_CARD')
+    ).convert(Converters.NUMBER_PARSER)
       .convert(Converters.inverse(CardNumber.NUMBER_CONVERTER))
+  }
+
+  private builtVisit (actor: SalonActor): StateSlot<BuiltVisit> {
+    return this.stateStore.slot(
+      actor.id(), new StateCategoryId(SalonAssistant.name, 'BUILT_VISIT')
+    ).convert(Converters.JSON_PARSER)
+      .convert(Converters.inverse(BuiltVisit.JSONIZER))
   }
 
   private handleVerified (actor: SalonActor, cardNumber: CardNumber): Promise<Array<Reaction>> {
@@ -265,6 +285,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
         if (choices.length === 0) {
           return Results.many(Reactions.plainText(SalonTexts.noTreatmentAvailable()))
         }
+        this.builtVisit(actor).set(new BuiltVisit([]))
         return SalonAssistant.pageTreatmentChoices(
           SalonTexts.pickTreatmentPrompt(false), choices
         )
@@ -280,8 +301,8 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
         const finalChoices: Array<Choice> = [
           Choices.inquiry(
             SalonTexts.treatmentPickingConfirm(),
-            SalonAssistant.cardTreatmentsInquiry(
-              cardNumber, picks, 'TREATMENTS_CONFIRMED'
+            SalonAssistant.cardInquiry(
+              cardNumber, 'TREATMENTS_CONFIRMED'
             )
           ),
           Choices.inquiry(
@@ -329,7 +350,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
         (treatment) => Choices.inquiry(
           treatment.fullName(),
           SalonAssistant.cardTreatmentsInquiry(
-            cardNumber, picks.concat(treatment.name()), 'TREATMENTS_PICKED'
+            cardNumber, treatment.name(), 'TREATMENT_PICKED'
           )
         )
       )
@@ -390,12 +411,12 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
   }
 
   private static cardTreatmentsInquiry (
-    cardNumber: CardNumber, treatmentNames: Array<TreatmentName>, type: string
-  ): CardContextInquiry & TreatmentsContextInquiry {
+    cardNumber: CardNumber, treatmentName: TreatmentName, type: string
+  ): CardContextInquiry & TreatmentContextInquiry {
     return {
       type,
       cardNumber: cardNumber.asNumber(),
-      treatmentNames: treatmentNames.map((name) => name.toRepresentation())
+      treatmentName: treatmentName.toRepresentation()
     }
   }
 }

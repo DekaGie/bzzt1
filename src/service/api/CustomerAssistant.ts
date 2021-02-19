@@ -112,12 +112,6 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
         choices: [
           Choices.link(CustomerTexts.onlineBooking(), salon.bookingLink()),
           Choices.phone(CustomerTexts.phoneBooking(), salon.contactLink())
-
-          // Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/power-brows'),
-          // Choices.phone(CustomerTexts.phoneBooking(), '+48736842624')
-
-          //       Choices.link(CustomerTexts.onlineBooking(), 'https://www.moment.pl/martyna-krawczyk-beauty'),
-          //       Choices.phone(CustomerTexts.phoneBooking(), '+48691120992')
         ]
       }
     )

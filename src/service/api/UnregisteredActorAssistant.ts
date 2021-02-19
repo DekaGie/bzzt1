@@ -18,11 +18,9 @@ import FreeTextInquiry from '../spi/FreeTextInquiry'
 import UnregisteredTexts from '../text/UnregisteredTexts'
 import TextExtractions from '../util/TextExtractions'
 import Results from '../util/Results'
+import Converters from '../../util/Converters'
 
 class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
-  private static readonly ASKED_FOR_ACTIVATE: StateCategoryId =
-      new StateCategoryId(UnregisteredActorAssistant.name, 'ASKED_FOR_ACTIVATE');
-
   private readonly cardRegistrator: CardRegistrator;
 
   private readonly barcodeParser: BarcodeParser;
@@ -73,7 +71,7 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
         )
       }
       case 'PROMPT_ACTIVATE': {
-        this.stateStore.slot(actorId, UnregisteredActorAssistant.ASKED_FOR_ACTIVATE).set(true)
+        this.askedForActivate(actorId).set(true)
         return Results.many(Reactions.plainText(UnregisteredTexts.inputCardNumberPrompt()))
       }
       case 'ACTIVATE': {
@@ -86,8 +84,8 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
     }
   }
 
-  handleCardNumber (actorId: ActorId, cardNumber: number): Promise<Array<Reaction>> {
-    const asked: StateSlot<Boolean> = this.stateStore.slot(actorId, UnregisteredActorAssistant.ASKED_FOR_ACTIVATE)
+  private handleCardNumber (actorId: ActorId, cardNumber: number): Promise<Array<Reaction>> {
+    const asked: StateSlot<Boolean> = this.askedForActivate(actorId)
     if (asked.get().orElse(false)) {
       return this.cardRegistrator.validateAndRegister(actorId, cardNumber)
     }
@@ -100,6 +98,12 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
         }
       )
     )
+  }
+
+  private askedForActivate (actorId: ActorId): StateSlot<boolean> {
+    return this.stateStore.slot(
+      actorId, new StateCategoryId(UnregisteredActorAssistant.name, 'ASKED_FOR_ACTIVATE')
+    ).convert(Converters.BOOLEAN_PARSER)
   }
 }
 
