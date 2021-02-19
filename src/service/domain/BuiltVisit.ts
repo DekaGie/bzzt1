@@ -4,7 +4,7 @@ import Converters from '../../util/Converters'
 
 class BuiltVisit {
   static readonly JSONIZER: Converter<BuiltVisit, any> = Converters.construct(
-    (visit) => { visit.treatmentNames().map((name) => name.toRepresentation()) },
+    (visit) => ({ treatmentNames: visit.treatmentNames().map((name) => name.toRepresentation()) }),
     (ref) => new BuiltVisit(ref.treatmentNames.map((name) => new TreatmentName(name)))
   )
 
