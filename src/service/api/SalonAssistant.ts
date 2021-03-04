@@ -369,7 +369,9 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
       (fetches) => {
         // TODO: event
         SalonAssistant.LOG.info(`salon ${actor.name()} successfully accepted ${cardNumber} for ${treatments}`)
-        const customerName: string = fetches[0].holder().get().personalData().get().fullName()
+        const customerName: string = fetches[0].holder().get().personalData()
+          .map((data) => data.fullName())
+          .orElse(SalonTexts.unknownCustomer(cardNumber.asNumber()))
         const treatmentNames: Array<string> = fetches[1].map((name) => name.fullName())
         return Results.many(Reactions.plainText(SalonTexts.flowSuccessful(customerName, treatmentNames)))
       }

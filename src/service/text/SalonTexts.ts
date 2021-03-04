@@ -102,6 +102,10 @@ Przerywam proces rozliczania usług, w razie potrzeby zacznij go od początku, s
 Zanotowałem, że ${customerName} przyszła do Was na usługi: ${listing}
 Jeśli coś się nie zgadza, wyjaśniaj błąd kontaktując się z operatorem Beauty Zazero.`
   }
+
+  static unknownCustomer (cardNumber: number): string {
+    return `świeża posiadaczka karty ${cardNumber}`
+  }
 }
 
 export default SalonTexts
