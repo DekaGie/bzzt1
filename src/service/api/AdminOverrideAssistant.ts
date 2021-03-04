@@ -26,6 +26,7 @@ class AdminOverrideAssistant implements ActorAssistant<ActorId> {
     underlying: ActorAssistant<ActorId>,
   ) {
     this.underlying = underlying
+    this.cardRegistrationRepository = cardRegistrationRepository
     this.salonRegistrator = salonRegistrator
     this.stateStore = stateStore
   }
