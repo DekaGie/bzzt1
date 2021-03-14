@@ -16,6 +16,7 @@ import SalonResolver from './SalonResolver'
 import PacketResolver from './PacketResolver'
 import AvailableSalon from '../domain/AvailableSalon'
 import AvailablePacket from '../domain/AvailablePacket'
+import Choice from '../spi/Choice'
 
 class CustomerAssistant implements ActorAssistant<CustomerActor> {
   private readonly salonResolver: SalonResolver;
@@ -109,10 +110,11 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
         topImage: salon.picture(),
         title: salon.displayName(),
         subtitle: `${salon.availablePacketNames().join(', ')}.`,
-        choices: [
-          Choices.link(CustomerTexts.onlineBooking(), salon.bookingLink()),
+        choices: salon.bookingLinks().map<Choice>(
+          (bookingLink, index) => Choices.link(CustomerTexts.onlineBooking(index), bookingLink)
+        ).concat(
           Choices.phone(CustomerTexts.phoneBooking(), salon.contactLink())
-        ]
+        )
       }
     )
   }

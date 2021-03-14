@@ -25,8 +25,8 @@ Umów się na wizytę w dowolny sposób - nie musisz nawet wspominać o karcie.
 Po prostu przy płatności wyciągnij ją zamiast karty płatniczej :)`
   }
 
-  static onlineBooking (): string {
-    return 'Rezerwacje online'
+  static onlineBooking (index: number): string {
+    return index === 0 ? 'Rezerwacje online' : '... więcej terminów'
   }
 
   static phoneBooking (): string {

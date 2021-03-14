@@ -16,8 +16,8 @@ class AvailableSalon {
     return new ImageUrl(this.dbo.pictureUrl)
   }
 
-  bookingLink () : string {
-    return this.dbo.bookingUrl
+  bookingLinks () : Array<string> {
+    return this.dbo.bookingUrl.split(',')
   }
 
   contactLink () : string {
