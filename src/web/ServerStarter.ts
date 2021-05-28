@@ -8,6 +8,8 @@ import PrivacyPolicyServlet from './PrivacyPolicyServlet'
 import VerificationServlet from './VerificationServlet'
 import ErrorFilter from './ErrorFilter'
 import MessagingServlet from './MessagingServlet'
+import ApiSafeErrorFilter from './api/ApiSafeErrorFilter'
+import SalonTreatmentsServlet from './api/SalonTreatmentsServlet'
 
 class ServerStarter {
   static start (config: Config, locator: ServiceLocator): Promise<Server> {
@@ -36,6 +38,12 @@ class ServerStarter {
           )
         )
       )
+    )
+
+    const api: ExpressEndpointFactory = endpoints.filter(new ApiSafeErrorFilter())
+    application.get(
+      '/salons/me/treatments',
+      api.servlet(new SalonTreatmentsServlet(locator.db.refer()))
     )
 
     return new Promise(

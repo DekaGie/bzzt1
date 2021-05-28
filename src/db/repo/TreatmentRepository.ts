@@ -3,6 +3,15 @@ import TreatmentDbo from '../dbo/TreatmentDbo'
 
 @EntityRepository(TreatmentDbo)
 class TreatmentRepository extends Repository<TreatmentDbo> {
+  findAllOffered (salonName: string): Promise<Array<TreatmentDbo>> {
+    return this.createQueryBuilder('treatment')
+      .leftJoin('treatment.salonTreatments', 'salonTreatment')
+      .leftJoin('salonTreatment.salon', 'salon')
+      .where('salon.salonName = :salonName')
+      .setParameters({ salonName })
+      .getMany()
+  }
+
   findOffered (salonName: string, cardNumber: number): Promise<Array<TreatmentDbo>> {
     return this.createQueryBuilder('treatment')
       .leftJoin('treatment.salonTreatments', 'salonTreatment')

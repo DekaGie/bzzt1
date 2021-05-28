@@ -11,6 +11,11 @@ class TreatmentResolver {
     this.treatmentRepository = treatmentRepository
   }
 
+  findAllOffered (salonName: SalonName): Promise<Array<OfferedTreatment>> {
+    return this.treatmentRepository.findAllOffered(salonName.toRepresentation())
+      .then((dbos) => dbos.map((dbo) => new OfferedTreatment(dbo)))
+  }
+
   findOffered (salonName: SalonName, cardNumber: CardNumber): Promise<Array<OfferedTreatment>> {
     return this.treatmentRepository.findOffered(salonName.toRepresentation(), cardNumber.asNumber())
       .then((dbos) => dbos.map((dbo) => new OfferedTreatment(dbo)))

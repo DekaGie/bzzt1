@@ -10,6 +10,13 @@ class SalonRepository extends Repository<SalonDbo> {
       .getOne()
   }
 
+  findBySecret (salonSecret: string): Promise<SalonDbo | undefined> {
+    return this.createQueryBuilder('salon')
+      .where('salon.salonSecret = :salonSecret')
+      .setParameters({ salonSecret })
+      .getOne()
+  }
+
   findAvailable (cardNumber: number): Promise<Array<SalonDbo>> {
     return this.createQueryBuilder('salon')
       .leftJoinAndSelect('salon.salonTreatments', 'salonTreatment')
