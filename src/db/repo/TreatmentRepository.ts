@@ -7,6 +7,7 @@ class TreatmentRepository extends Repository<TreatmentDbo> {
     return this.createQueryBuilder('treatment')
       .leftJoin('treatment.salonTreatments', 'salonTreatment')
       .leftJoin('salonTreatment.salon', 'salon')
+      .leftJoinAndSelect('treatment.packet', 'packet')
       .where('salon.salonName = :salonName')
       .setParameters({ salonName })
       .getMany()
