@@ -8,7 +8,6 @@ import Reaction from './spi/Reaction'
 import PlainTextReaction from './spi/PlainTextReaction'
 import RichImageReaction from './spi/RichImageReaction'
 import RichChoiceReaction from './spi/RichChoiceReaction'
-import Arrays from '../util/Arrays'
 import { InquiryChoice, LinkChoice, PhoneChoice } from './spi/Choice'
 import ImageUrl from './domain/ImageUrl'
 import ImageInquiry from './spi/ImageInquiry'
@@ -53,95 +52,85 @@ class BzzBot implements FbMessengerBot {
         (reactions) => {
           if (reactions.length === 0) {
             BzzBot.LOG.warn(`no reaction to ${psid} inquiring ${JSON.stringify(inquiry)}`)
-          } else {
-            BzzBot.LOG.debug(`reactions to ${psid} inquiring ${JSON.stringify(inquiry)}: ${JSON.stringify(reactions)}`)
+            return this.send(outbox, psid, Reactions.plainText(GpTexts.missingReaction()))
           }
-          const groups: Array<Array<Reaction>> = Arrays.sequenceGroupBy(
-            reactions, (reaction) => reaction.type
-          )
+          BzzBot.LOG.debug(`reactions to ${psid} inquiring ${JSON.stringify(inquiry)}: ${JSON.stringify(reactions)}`)
           return Promises.sequential(
-            groups, (group) => this.send(outbox, psid, group)
+            reactions, (reaction) => this.send(outbox, psid, reaction)
           )
+        }
+      )
+      .then(
+        () => {
+          BzzBot.LOG.debug(`successfully handled for ${psid}`)
         }
       )
   }
 
-  private send (outbox: FbMessengerOutbox, psid: string, reactions: Array<Reaction>): Promise<void> {
-    const type: string = Arrays.getUniformElement(reactions.map((reaction) => reaction.type))
-    switch (type) {
+  private send (outbox: FbMessengerOutbox, psid: string, reaction: Reaction): Promise<void> {
+    switch (reaction.type) {
       case 'PLAIN_TEXT': {
-        const plainTexts: Array<PlainTextReaction> = reactions as Array<PlainTextReaction>
-        return Promises.sequential(
-          plainTexts, (plainText) => outbox.sendText(psid, plainText.plainText)
-        )
+        return outbox.sendText(psid, (reaction as PlainTextReaction).plainText)
       }
       case 'RICH_IMAGE': {
-        const richImages: Array<RichImageReaction> = reactions as Array<RichImageReaction>
+        const richImage: RichImageReaction = reaction as RichImageReaction
         return outbox.sendGenericTemplate(
           psid,
-          richImages.map(
-            (richImage) => (
-              {
-                topImage: { url: richImage.imageUrl.asString(), squareRatio: true },
-                title: richImage.caption,
-                subtitle: Optional.ofNullable(richImage.subtitle).orNull(),
-                buttons: []
-              }
-            )
-          )
+          {
+            topImage: { url: richImage.imageUrl.asString(), squareRatio: true },
+            title: richImage.caption,
+            subtitle: Optional.ofNullable(richImage.subtitle).orNull(),
+            buttons: []
+          }
         )
       }
       case 'RICH_CHOICE': {
-        const richChoices: Array<RichChoiceReaction> = reactions as Array<RichChoiceReaction>
+        const richChoice: RichChoiceReaction = reaction as RichChoiceReaction
         return outbox.sendGenericTemplate(
           psid,
-          richChoices.map(
-            (richChoice) => (
-              {
-                topImage: Optional.ofNullable(richChoice.topImage).map(
-                  (imageUrl) => (
-                    {
-                      url: imageUrl.asString(),
-                      squareRatio: Optional.ofNullable(richChoice.imageAsSquare).orElse(false)
-                    }
-                  )
-                ).orNull(),
-                title: richChoice.title,
-                subtitle: Optional.ofNullable(richChoice.subtitle).orNull(),
-                buttons: richChoice.choices.map(
-                  (choice) => {
-                    switch (choice.type) {
-                      case 'LINK': {
-                        return {
-                          text: choice.label,
-                          url: (choice as LinkChoice).url
-                        }
-                      }
-                      case 'PHONE': {
-                        return {
-                          text: choice.label,
-                          phoneNumber: (choice as PhoneChoice).phone
-                        }
-                      }
-                      case 'INQUIRY': {
-                        return {
-                          text: choice.label,
-                          postback: JSON.stringify((choice as InquiryChoice).inquiry)
-                        }
-                      }
-                      default: {
-                        throw new Error(`unexpected choice type: ${choice.type}`)
-                      }
+          {
+            topImage: Optional.ofNullable(richChoice.topImage).map(
+              (imageUrl) => (
+                {
+                  url: imageUrl.asString(),
+                  squareRatio: Optional.ofNullable(richChoice.imageAsSquare).orElse(false)
+                }
+              )
+            ).orNull(),
+            title: richChoice.title,
+            subtitle: Optional.ofNullable(richChoice.subtitle).orNull(),
+            buttons: richChoice.choices.map(
+              (choice) => {
+                switch (choice.type) {
+                  case 'LINK': {
+                    return {
+                      text: choice.label,
+                      url: (choice as LinkChoice).url
                     }
                   }
-                )
+                  case 'PHONE': {
+                    return {
+                      text: choice.label,
+                      phoneNumber: (choice as PhoneChoice).phone
+                    }
+                  }
+                  case 'INQUIRY': {
+                    return {
+                      text: choice.label,
+                      postback: JSON.stringify((choice as InquiryChoice).inquiry)
+                    }
+                  }
+                  default: {
+                    throw new Error(`unexpected choice type: ${choice.type}`)
+                  }
+                }
               }
             )
-          )
+          }
         )
       }
       default: {
-        throw new Error(`unexpected reaction type: ${type}`)
+        throw new Error(`unexpected reaction type: ${reaction.type}`)
       }
     }
   }

@@ -23,16 +23,9 @@ class FbClientOutbox implements FbMessengerOutbox {
     )
   }
 
-  sendGenericTemplate (psid: string, generics: Array<FbGenericTemplate>): Promise<void> {
-    if (generics.length === 0) {
-      return Promise.resolve()
-    }
-    const squareRatio: Set<boolean> = new Set(
-      generics.map(
-        (generic) => Optional.ofNullable(generic.topImage)
-          .map((top) => top.squareRatio === true).orElse(false)
-      )
-    )
+  sendGenericTemplate (psid: string, generic: FbGenericTemplate): Promise<void> {
+    const squareRatio: boolean = Optional.ofNullable(generic.topImage)
+      .map((top) => top.squareRatio === true).orElse(false)
     return this.send(
       psid,
       {
@@ -40,8 +33,8 @@ class FbClientOutbox implements FbMessengerOutbox {
           type: 'template',
           payload: {
             template_type: 'generic',
-            image_aspect_ratio: squareRatio.has(true) ? 'square' : 'horizontal',
-            elements: generics.map((generic) => FbClientOutbox.toElement(generic))
+            image_aspect_ratio: squareRatio ? 'square' : 'horizontal',
+            elements: [FbClientOutbox.toElement(generic)]
           }
         }
       }

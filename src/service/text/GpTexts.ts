@@ -19,6 +19,12 @@ class GpTexts {
     return `Przepraszamy, wystąpił niespodziewany błąd po stronie systemu Beauty Zazero.
 Jeśli to pilne, skontaktuj się z obsługą klienta: +48 662 097 978`
   }
+
+  static missingReaction () {
+    return `Przepraszam, ale nie wiem jak zareagować na tę wiadomość.
+Być może odpowiedziałaś na pytanie zadane dawno temu?
+Spróbuj rozpocząć konwersację od początku :)`
+  }
 }
 
 export default GpTexts
