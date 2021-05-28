@@ -65,6 +65,7 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
       Reactions.choice(
         {
           title: CustomerTexts.welcome(actor.calloutName()),
+          topImage: StaticImageUrls.WELCOME,
           subtitle: CustomerTexts.intentPrompt(),
           choices: [
             Choices.inquiry(CustomerTexts.showPartners(), { type: 'SHOW_PARTNERS' }),
