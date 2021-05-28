@@ -19,6 +19,7 @@ import ActorAssistant from './api/ActorAssistant'
 import Results from './util/Results'
 import Logger from '../log/Logger'
 import Loggers from '../log/Loggers'
+import StaticImageUrls from './util/StaticImageUrls'
 
 class BzzBot implements FbMessengerBot {
   private static readonly LOG: Logger = Loggers.get(BzzBot.name)
@@ -105,7 +106,12 @@ class BzzBot implements FbMessengerBot {
                       squareRatio: Optional.ofNullable(richChoice.imageAsSquare).orElse(false)
                     }
                   )
-                ).orNull(),
+                ).orElse(
+                  {
+                    url: StaticImageUrls.HORIZONTAL_LOGO.asString(),
+                    squareRatio: false
+                  }
+                ),
                 title: richChoice.title,
                 subtitle: Optional.ofNullable(richChoice.subtitle).orNull(),
                 buttons: richChoice.choices.map(
