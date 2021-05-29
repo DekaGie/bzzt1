@@ -24,12 +24,14 @@ class SalonTreatmentsServlet implements HttpServlet {
       .then(
         (treatments) => ({
           code: 200,
-          body: treatments.map(
-            (treatment) => ({
-              id: treatment.name().toRepresentation(),
-              label: treatment.fullName()
-            })
-          )
+          body: {
+            offeredTreatments: treatments.map(
+              (treatment) => ({
+                id: treatment.name().toRepresentation(),
+                label: treatment.fullName()
+              })
+            )
+          }
         })
       )
   }

@@ -10,6 +10,7 @@ import ErrorFilter from './ErrorFilter'
 import MessagingServlet from './MessagingServlet'
 import ApiSafeErrorFilter from './api/ApiSafeErrorFilter'
 import SalonTreatmentsServlet from './api/SalonTreatmentsServlet'
+import SalonCardHolderServlet from './api/SalonCardHolderServlet'
 
 class ServerStarter {
   static start (config: Config, locator: ServiceLocator): Promise<Server> {
@@ -47,7 +48,7 @@ class ServerStarter {
     )
     application.get(
       '/salons/me/card_holder/:card_number',
-      api.servlet(new SalonTreatmentsServlet(locator.db.refer()))
+      api.servlet(new SalonCardHolderServlet(locator.db.refer()))
     )
 
     return new Promise(
