@@ -15,9 +15,7 @@ class SalonContextResolver {
   }
 
   resolve (request: HttpRequest): Promise<SalonName> {
-    const salonSecret: string = request.query.optional('salon_secret').orElseThrow(
-      () => new ApiSafeError('missing_secret', 'Brak hasła salonu.')
-    )
+    const salonSecret: string = request.query.mandatory('salon_secret')
     return this.salons.findNameBySecret(salonSecret)
       .then(
         (found) => found.orElseThrow(

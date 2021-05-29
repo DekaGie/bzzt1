@@ -24,17 +24,7 @@ class TreatmentResolver {
   get (names: Array<TreatmentName>): Promise<Array<OfferedTreatment>> {
     const treatmentNames: Array<string> = names.map((name) => name.toRepresentation())
     return this.treatmentRepository.findOfferedDirectly(treatmentNames)
-      .then(
-        (dbos) => {
-          if (dbos.length !== treatmentNames.length) {
-            throw new Error(`one of treatments missing: ${names}`)
-          }
-          dbos.sort(
-            (left, right) => treatmentNames.indexOf(left.treatmentName) - treatmentNames.indexOf(right.treatmentName)
-          )
-          return dbos.map((dbo) => new OfferedTreatment(dbo))
-        }
-      )
+      .then((dbos) => dbos.map((dbo) => new OfferedTreatment(dbo)))
   }
 }
 
