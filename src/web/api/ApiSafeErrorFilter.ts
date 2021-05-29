@@ -6,6 +6,7 @@ import HttpServlet from '../../http/HttpServlet'
 import HttpResponse from '../../http/HttpResponse'
 import Promises from '../../util/Promises'
 import ApiSafeError from './ApiSafeError'
+import HttpError from '../../http/HttpError'
 
 class ApiSafeErrorFilter implements HttpFilter {
   private static readonly LOG: Logger = Loggers.get(ApiSafeErrorFilter.name)
@@ -30,6 +31,9 @@ class ApiSafeErrorFilter implements HttpFilter {
   }
 
   private static toApiSafeError (error: any): ApiSafeError {
+    if (error instanceof HttpError) {
+      return new ApiSafeError(`rest-framework-error-${error.code}`, `Framework REST zwrócił błąd: ${error.detail}`)
+    }
     return new ApiSafeError('unexpected_error', 'Wystąpił nieznany błąd. Spróbuj ponownie później.', error)
   }
 }
