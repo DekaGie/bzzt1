@@ -49,7 +49,7 @@ class SalonVisitServlet implements HttpServlet {
         treatmentNames.forEach(
           (treatmentName) => {
             if (!foundNames.has(treatmentName.toRepresentation())) {
-              throw new ApiSafeError('treatment_not_found', `Nie istnieje zabieg ${treatmentName.toRepresentation()}`)
+              throw new ApiSafeError('treatment_not_found', `Nie istnieje zabieg ${treatmentName.toRepresentation()}.`)
             }
           }
         )
