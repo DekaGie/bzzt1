@@ -3,6 +3,7 @@ import HttpServlet from './HttpServlet'
 import UrlQuery from './UrlQuery'
 import Predicates from '../util/Predicates'
 import RequestBody from './RequestBody'
+import UrlPath from './UrlPath'
 
 class ExpressServletAdapter {
   private readonly servlet: HttpServlet
@@ -16,6 +17,7 @@ class ExpressServletAdapter {
       .then(
         (body) => this.servlet.handle(
           {
+            path: new UrlPath(req.params),
             query: new UrlQuery(req.query),
             body: new RequestBody(body)
           }

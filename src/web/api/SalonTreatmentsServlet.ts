@@ -1,39 +1,26 @@
 import { Connection } from 'typeorm'
-import ApiSafeError from './ApiSafeError'
 import TreatmentResolver from '../../service/api/TreatmentResolver'
 import TreatmentRepository from '../../db/repo/TreatmentRepository'
-import SalonResolver from '../../service/api/SalonResolver'
-import SalonRepository from '../../db/repo/SalonRepository'
 import HttpServlet from '../../http/HttpServlet'
 import HttpRequest from '../../http/HttpRequest'
 import HttpResponse from '../../http/HttpResponse'
+import SalonContextResolver from './SalonContextResolver'
 
 class SalonTreatmentsServlet implements HttpServlet {
-  private readonly salons: SalonResolver;
+  private readonly salons: SalonContextResolver;
 
   private readonly treatments: TreatmentResolver;
 
   constructor (db: Connection) {
-    this.salons = new SalonResolver(
-      db.getCustomRepository(SalonRepository)
-    )
+    this.salons = new SalonContextResolver(db)
     this.treatments = new TreatmentResolver(
       db.getCustomRepository(TreatmentRepository)
     )
   }
 
   handle (request: HttpRequest): Promise<HttpResponse> {
-    const salonSecret: string = request.query.optional('salon_secret').orElseThrow(
-      () => new ApiSafeError('missing_secret', 'Brak hasła salonu.')
-    )
-    return this.salons.findNameBySecret(salonSecret)
-      .then(
-        (found) => found.map(
-          (salonName) => this.treatments.findAllOffered(salonName)
-        ).orElseThrow(
-          () => new ApiSafeError('invalid_secret', 'Błędne hasło salonu.')
-        )
-      )
+    return this.salons.resolve(request)
+      .then((salonName) => this.treatments.findAllOffered(salonName))
       .then(
         (treatments) => ({
           code: 200,

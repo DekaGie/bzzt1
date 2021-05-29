@@ -21,8 +21,10 @@ class ApiSafeErrorFilter implements HttpFilter {
     return {
       code: 200,
       body: {
-        id: apiSafeError.id,
-        label: apiSafeError.label
+        problem: {
+          id: apiSafeError.id,
+          label: apiSafeError.label
+        }
       }
     }
   }

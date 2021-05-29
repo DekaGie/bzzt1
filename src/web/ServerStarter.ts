@@ -45,6 +45,10 @@ class ServerStarter {
       '/salons/me/treatments',
       api.servlet(new SalonTreatmentsServlet(locator.db.refer()))
     )
+    application.get(
+      '/salons/me/card_holder/:card_number',
+      api.servlet(new SalonTreatmentsServlet(locator.db.refer()))
+    )
 
     return new Promise(
       (resolve, reject) => {
