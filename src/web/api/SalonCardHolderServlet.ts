@@ -57,12 +57,9 @@ class SalonCardHolderServlet implements HttpServlet {
           (treatments) => ({
             code: 200,
             body: {
-              identity: card.holder()
-                .map(
-                  (cardHolder) => cardHolder.personalData().orElseThrow(
-                    () => new ApiSafeError('not_yet_activated_card', 'Karta musi najpierw zostać aktywowana.')
-                  )
-                )
+              identity: card.holder().orElseThrow(
+                () => new ApiSafeError('not_yet_activated_card', 'Karta musi najpierw zostać aktywowana.')
+              ).personalData()
                 .map(
                   (personalData) => ({
                     name: personalData.fullName(),
