@@ -12,7 +12,6 @@ import ResolvedCard from './ResolvedCard'
 import TreatmentName from '../../service/domain/TreatmentName'
 import Logger from '../../log/Logger'
 import Loggers from '../../log/Loggers'
-import OfferedTreatment from '../../service/domain/OfferedTreatment'
 
 class SalonVisitServlet implements HttpServlet {
   private static readonly LOG: Logger = Loggers.get(SalonVisitServlet.name)
@@ -38,28 +37,35 @@ class SalonVisitServlet implements HttpServlet {
       .map((string) => new TreatmentName(string))
     const salonPromise: Promise<SalonName> = this.salons.resolve(request)
     const cardPromise: Promise<ResolvedCard> = this.cards.resolve(request)
-    const treatmentsPromise: Promise<Array<OfferedTreatment>> = this.treatments.get(treatmentNames)
-    return Promise.all([salonPromise, cardPromise, treatmentsPromise]).then(
+    return Promise.all([salonPromise, cardPromise]).then(
       (all) => {
         const salon: SalonName = all[0]
         const card: ResolvedCard = all[1]
-        const treatments: Array<OfferedTreatment> = all[2]
-        const accepted: Array<TreatmentName> = treatments.map((treatment) => treatment.name())
-        const foundNames: Set<string> = new Set(accepted.map((name) => name.toRepresentation()))
-        treatmentNames.forEach(
-          (treatmentName) => {
-            if (!foundNames.has(treatmentName.toRepresentation())) {
-              throw new ApiSafeError('treatment_not_found', `Nie istnieje zabieg ${treatmentName.toRepresentation()}.`)
+        return this.treatments.findOffered(salon, card.cardNumber()).then(
+          (offeredTreatments) => {
+            const validNames: Set<string> = new Set(
+              offeredTreatments.map((offered) => offered.name().toRepresentation())
+            )
+            treatmentNames.forEach(
+              (treatmentName) => {
+                if (!validNames.has(treatmentName.toRepresentation())) {
+                  throw new ApiSafeError(
+                    'treatment_not_offered', `Zabieg ${treatmentName.toRepresentation()} nie jest dostępny.`
+                  )
+                }
+              }
+            )
+            SalonVisitServlet.LOG.info(
+              `salon ${salon} successfully accepted ${card.cardNumber()} for ${treatmentNames}`
+            )
+            return {
+              code: 200,
+              body: {
+                success: true
+              }
             }
           }
         )
-        SalonVisitServlet.LOG.info(`salon ${salon} successfully accepted ${card.cardNumber()} for ${accepted}`)
-        return {
-          code: 200,
-          body: {
-            success: true
-          }
-        }
       }
     )
   }
