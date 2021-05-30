@@ -12,6 +12,9 @@ import ResolvedCard from './ResolvedCard'
 import TreatmentName from '../../service/domain/TreatmentName'
 import Logger from '../../log/Logger'
 import Loggers from '../../log/Loggers'
+import TreatmentExecutionRepository
+  from '../../db/repo/TreatmentExecutionRepository'
+import VisitRegistrator from '../../service/api/VisitRegistrator'
 
 class SalonVisitServlet implements HttpServlet {
   private static readonly LOG: Logger = Loggers.get(SalonVisitServlet.name)
@@ -22,10 +25,13 @@ class SalonVisitServlet implements HttpServlet {
 
   private readonly treatments: TreatmentResolver;
 
+  private readonly visits: VisitRegistrator;
+
   constructor (db: Connection) {
     this.salons = new SalonContextResolver(db)
     this.cards = new CardContextResolver(db)
     this.treatments = new TreatmentResolver(db.getCustomRepository(TreatmentRepository))
+    this.visits = new VisitRegistrator(db.getCustomRepository(TreatmentExecutionRepository))
   }
 
   handle (request: HttpRequest): Promise<HttpResponse> {
@@ -55,15 +61,19 @@ class SalonVisitServlet implements HttpServlet {
                 }
               }
             )
-            SalonVisitServlet.LOG.info(
-              `salon ${salon} successfully accepted ${card.cardNumber()} for ${treatmentNames}`
-            )
-            return {
-              code: 200,
-              body: {
-                success: true
+            return this.visits.register(salon, card.cardNumber(), treatmentNames).then(
+              () => {
+                SalonVisitServlet.LOG.info(
+                  `salon ${salon} successfully accepted ${card.cardNumber()} for ${treatmentNames}`
+                )
+                return {
+                  code: 200,
+                  body: {
+                    success: true
+                  }
+                }
               }
-            }
+            )
           }
         )
       }

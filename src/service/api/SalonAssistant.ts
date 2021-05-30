@@ -32,6 +32,8 @@ import TreatmentName from '../domain/TreatmentName'
 import TreatmentsContextInquiry from '../domain/TreatmentsContextInquiry'
 import Choice, { InquiryChoice } from '../spi/Choice'
 import CardUpdater from './CardUpdater'
+import VisitRegistrator from './VisitRegistrator'
+import OfferedTreatment from '../domain/OfferedTreatment'
 
 class SalonAssistant implements ActorAssistant<SalonActor> {
   private static readonly LOG: Logger = Loggers.get(SalonAssistant.name)
@@ -46,18 +48,22 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
 
   private readonly treatmentResolver: TreatmentResolver;
 
+  private readonly visitRegistrator: VisitRegistrator;
+
   constructor (
     barcodeParser: BarcodeParser,
     cardChecker: CardChecker,
     cardUpdater: CardUpdater,
     stateStore: StateStore,
-    treatmentResolver: TreatmentResolver
+    treatmentResolver: TreatmentResolver,
+    visitRegistrator: VisitRegistrator
   ) {
     this.barcodeParser = barcodeParser
     this.cardChecker = cardChecker
     this.cardUpdater = cardUpdater
     this.stateStore = stateStore
     this.treatmentResolver = treatmentResolver
+    this.visitRegistrator = visitRegistrator
   }
 
   handle (actor: SalonActor, inquiry: Inquiry): Promise<Array<Reaction>> {
@@ -345,13 +351,19 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
       ]
     ).then(
       (fetches) => {
-        // TODO: event
-        SalonAssistant.LOG.info(`salon ${actor.name()} successfully accepted ${cardNumber} for ${treatments}`)
-        const customerName: string = fetches[0].holder().get().personalData()
-          .map((data) => data.fullName())
-          .orElse(SalonTexts.unknownCustomer(cardNumber.asNumber()))
-        const treatmentNames: Array<string> = fetches[1].map((name) => name.fullName())
-        return Results.many(Reactions.plainText(SalonTexts.flowSuccessful(customerName, treatmentNames)))
+        const offeredTreatments: Array<OfferedTreatment> = fetches[1]
+        return this.visitRegistrator.register(
+          actor.name(), cardNumber, offeredTreatments.map((offered) => offered.name())
+        ).then(
+          () => {
+            SalonAssistant.LOG.info(`salon ${actor.name()} successfully accepted ${cardNumber} for ${treatments}`)
+            const customerName: string = fetches[0].holder().get().personalData()
+              .map((data) => data.fullName())
+              .orElse(SalonTexts.unknownCustomer(cardNumber.asNumber()))
+            const treatmentNames: Array<string> = offeredTreatments.map((name) => name.fullName())
+            return Results.many(Reactions.plainText(SalonTexts.flowSuccessful(customerName, treatmentNames)))
+          }
+        )
       }
     )
   }
