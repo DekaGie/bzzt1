@@ -15,6 +15,7 @@
   "dependencies": {
     "@elastic/elasticsearch": "7.11.0",
     "axios": "0.21.1",
+    "cors": "2.8.5",
     "cubic-spline-ts": "^3.0.8",
     "express": "4.17.1",
     "form-data": "3.0.0",

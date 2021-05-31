@@ -1,4 +1,5 @@
 import express, { Application } from 'express'
+import cors from 'cors'
 import { Server } from 'http'
 import ServiceLocator from '../ServiceLocator'
 import FbMessengerPlatform from '../fb/FbMessengerPlatform'
@@ -15,7 +16,7 @@ import SalonVisitServlet from './api/SalonVisitServlet'
 
 class ServerStarter {
   static start (config: Config, locator: ServiceLocator): Promise<Server> {
-    const application: Application = express()
+    const application: Application = express().use(cors())
 
     const endpoints: ExpressEndpointFactory = new ExpressEndpointFactory()
       .filter(new ErrorFilter())
