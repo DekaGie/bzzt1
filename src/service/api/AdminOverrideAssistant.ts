@@ -60,10 +60,10 @@ class AdminOverrideAssistant implements ActorAssistant<ActorId> {
       )
     }
     if (verb === 'salon') {
-      if (parts.length !== 3) {
-        return Results.many(Reactions.plainText('Podaj nazwę salonu i hasło, np. "!salon mkbeauty abc123".'))
+      if (parts.length !== 2) {
+        return Results.many(Reactions.plainText('Podaj kod salonu, np. "!salon tajne_haslo_salonu_x".'))
       }
-      return this.salonRegistrator.validateAndRegister(actorId, parts[1], parts[2])
+      return this.salonRegistrator.validateAndRegister(actorId, parts[1])
     }
     if (verb === 'unsalon') {
       return this.salonRegistrator.unregister(actorId)

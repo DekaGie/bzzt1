@@ -46,10 +46,6 @@ W takim razie zrób zdjęcie swojej karty Beauty Zazero lub podaj mi jej numer.`
     return 'Pewnie chcesz wiedzieć co dalej?'
   }
 
-  static unknownSalon (salonName: string): string {
-    return `Nie znam salonu "${salonName}".`
-  }
-
   static invalidSalonSecret (): string {
     return 'Nieprawidłowe hasło salonu'
   }

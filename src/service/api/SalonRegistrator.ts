@@ -24,17 +24,13 @@ class SalonRegistrator {
 
   validateAndRegister (
     actorId: ActorId,
-    salonName: string,
     salonSecret: string
   ): Promise<Array<Reaction>> {
-    return this.salonRepository.findByName(salonName)
+    return this.salonRepository.findBySecret(salonSecret)
       .then(Optional.ofNullable)
       .then(
         (salon) => {
           if (!salon.isPresent()) {
-            return Results.many(Reactions.plainText(UnregisteredTexts.unknownSalon(salonName)))
-          }
-          if (salon.get().salonSecret !== salonSecret) {
             return Results.many(Reactions.plainText(UnregisteredTexts.invalidSalonSecret()))
           }
           const registration: SalonRegistrationDbo = new SalonRegistrationDbo()

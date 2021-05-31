@@ -3,13 +3,6 @@ import SalonDbo from '../dbo/SalonDbo'
 
 @EntityRepository(SalonDbo)
 class SalonRepository extends Repository<SalonDbo> {
-  findByName (salonName: string): Promise<SalonDbo | undefined> {
-    return this.createQueryBuilder('salon')
-      .where('salon.salonName = :salonName')
-      .setParameters({ salonName })
-      .getOne()
-  }
-
   findBySecret (salonSecret: string): Promise<SalonDbo | undefined> {
     return this.createQueryBuilder('salon')
       .where('salon.salonSecret = :salonSecret')
