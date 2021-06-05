@@ -39,11 +39,11 @@ class CardRegistrator {
             return Results.many(Reactions.plainText(UnregisteredTexts.invalidCardNumber(cardNumber)))
           }
           const card: CheckedCard = optionalCard.get()
-          if (card.holder().isPresent()) {
-            return Results.many(Reactions.plainText(UnregisteredTexts.cardActivatedByAnother(card.cardNumber())))
-          }
           if (Instant.now().isAtOrAfter(card.validUntil())) {
             return Results.many(Reactions.plainText(UnregisteredTexts.outdatedCard(card.cardNumber())))
+          }
+          if (card.holder().isPresent()) {
+            return Results.many(Reactions.plainText(UnregisteredTexts.cardActivatedByAnother(card.cardNumber())))
           }
           return this.register(actorId, card)
         }
