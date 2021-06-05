@@ -8,6 +8,7 @@ import SalonActor from '../domain/SalonActor'
 import Actor from '../domain/Actor'
 import CustomerActor from '../domain/CustomerActor'
 import Promises from '../../util/Promises'
+import Instant from '../domain/Instant'
 
 class ActorResolver {
   private readonly cardRegistrationRepository: CardRegistrationRepository;
@@ -38,7 +39,10 @@ class ActorResolver {
   private resolveCustomer (actorId: ActorId): Promise<Optional<CustomerActor>> {
     return this.cardRegistrationRepository.findFull(actorId.toRepresentation())
       .then(Optional.ofNullable)
-      .then((optionalDbo) => optionalDbo.map((dbo) => new CustomerActor(dbo)))
+      .then(
+        (optionalDbo) => optionalDbo.map((dbo) => new CustomerActor(dbo))
+          .filter((actor) => actor.hasValidCardAt(Instant.now()))
+      )
   }
 }
 

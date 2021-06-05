@@ -3,6 +3,7 @@ import ActorId from '../domain/ActorId'
 import CardRegistrationDbo from '../../db/dbo/CardRegistrationDbo'
 import CardNumber from './CardNumber'
 import Actor from './Actor'
+import Instant from './Instant'
 
 class CustomerActor implements Actor {
   private readonly dbo: CardRegistrationDbo;
@@ -15,10 +16,6 @@ class CustomerActor implements Actor {
     return new ActorId(this.dbo.actorId)
   }
 
-  fullName (): string {
-    return `${this.dbo.identification.firstName} ${this.dbo.identification.lastName}`
-  }
-
   cardNumber (): CardNumber {
     return new CardNumber(this.dbo.card.cardNumber)
   }
@@ -29,6 +26,10 @@ class CustomerActor implements Actor {
 
   calloutName (): Optional<string> {
     return Optional.ofNullable(this.dbo.identification).map((identification) => identification.firstName)
+  }
+
+  hasValidCardAt (instant: Instant): boolean {
+    return !instant.isAtOrAfter(new Instant(this.dbo.card.agreement.validUntilEs))
   }
 }
 
