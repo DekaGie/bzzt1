@@ -29,6 +29,19 @@ class FbClient {
       }
     )
   }
+
+  identify (fbAccessToken: string): Promise<object> {
+    return axios.get(
+      `https://graph.facebook.com/v10.0/me?fields=id,name,email&access_token=${fbAccessToken}`
+    ).then(
+      (response) => {
+        if (response.status !== 200) {
+          throw new Error(`received HTTP ${response.status}: ${JSON.stringify(response.data)}`)
+        }
+        return response.data
+      }
+    )
+  }
 }
 
 export default FbClient

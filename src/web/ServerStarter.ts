@@ -13,6 +13,7 @@ import ApiSafeErrorFilter from './api/ApiSafeErrorFilter'
 import SalonTreatmentsServlet from './api/SalonTreatmentsServlet'
 import SalonCardHolderServlet from './api/SalonCardHolderServlet'
 import SalonVisitServlet from './api/SalonVisitServlet'
+import SalonAuthenticationServlet from './api/SalonAuthenticationServlet'
 
 class ServerStarter {
   static start (config: Config, locator: ServiceLocator): Promise<Server> {
@@ -44,6 +45,10 @@ class ServerStarter {
     )
 
     const api: ExpressEndpointFactory = endpoints.filter(new ApiSafeErrorFilter())
+    application.post(
+      '/salons/authenticate',
+      api.servlet(new SalonAuthenticationServlet(locator.fbClient.refer()))
+    )
     application.get(
       '/salons/me/treatments',
       api.servlet(new SalonTreatmentsServlet(locator.db.refer()))
