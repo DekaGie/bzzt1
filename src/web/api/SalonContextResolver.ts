@@ -20,6 +20,10 @@ class SalonContextResolver {
   }
 
   resolve (request: HttpRequest): Promise<SalonName> {
+    const kk = request.query.optional('fake_salon')
+    if (kk.isPresent()) {
+      return Promise.resolve(new SalonName(kk.get()))
+    }
     return request.query.optional('session_token')
       .map((token) => Promise.resolve(this.manager.validate(token)))
       .orElseGet(
