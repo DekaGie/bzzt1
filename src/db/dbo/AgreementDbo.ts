@@ -12,6 +12,9 @@ class AgreementDbo {
   @Column({ type: 'double precision', nullable: false })
   validUntilEs: number;
 
+  @Column({ type: 'boolean', nullable: false, default: false })
+  gentleman: boolean;
+
   @OneToMany(
     () => AgreementPacketDbo,
     (agreementPacket) => agreementPacket.agreement

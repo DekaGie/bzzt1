@@ -53,7 +53,7 @@ class UnregisteredActorAssistant implements ActorAssistant<ActorId> {
               subtitle: UnregisteredTexts.intentPrompt(),
               choices: [
                 Choices.inquiry(UnregisteredTexts.activateCard(), { type: 'PROMPT_ACTIVATE' }),
-                Choices.phone(GpTexts.customerService(), '+48662097978')
+                Choices.phone(GpTexts.faq(), 'https://beautyzazero.pl/faq')
               ]
             }
           )

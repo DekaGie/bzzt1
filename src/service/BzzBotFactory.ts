@@ -26,8 +26,9 @@ import SalonResolver from './api/SalonResolver'
 import PacketResolver from './api/PacketResolver'
 import PacketRepository from '../db/repo/PacketRepository'
 import VisitRegistrator from './api/VisitRegistrator'
-import TreatmentExecutionRepository
-  from '../db/repo/TreatmentExecutionRepository'
+import TreatmentExecutionRepository from '../db/repo/TreatmentExecutionRepository'
+import GenlemanAssistant from './api/GentlemanAssistant'
+import OutdatedAssistant from './api/OutdatedAssistant'
 
 class BzzBotFactory {
   static create (config: Config, locator: ServiceLocator) {
@@ -62,6 +63,8 @@ class BzzBotFactory {
         barcodeParser, cardChecker, cardUpdater, stateStore, treatmentResolver, visitRegistrator
       ),
       new CustomerAssistant(salonResolver, packetResolver),
+      new GenlemanAssistant(),
+      new OutdatedAssistant(),
       new UnregisteredActorAssistant(barcodeParser, cardRegistrator, stateStore)
     )
     return new BzzBot(

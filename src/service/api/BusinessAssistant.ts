@@ -9,6 +9,10 @@ import SalonActor from '../domain/SalonActor'
 import ActorResolver from './ActorResolver'
 import Actor from '../domain/Actor'
 import CustomerActor from '../domain/CustomerActor'
+import GentlemanActor from '../domain/GentlemanActor'
+import GentlemanAssistant from './GentlemanAssistant'
+import OutdatedAssistant from './OutdatedAssistant'
+import OutdatedActor from '../domain/OutdatedActor'
 
 class BusinessAssistant implements ActorAssistant<ActorId> {
   private readonly actorResolver: ActorResolver;
@@ -17,17 +21,25 @@ class BusinessAssistant implements ActorAssistant<ActorId> {
 
   private readonly customerAssistant: CustomerAssistant;
 
+  private readonly gentlemanAssistant: GentlemanAssistant;
+
+  private readonly outdatedAssistant: OutdatedAssistant;
+
   private readonly unregisteredActorAssistant: UnregisteredActorAssistant;
 
   constructor (
     actorResolver: ActorResolver,
     salonAssistant: SalonAssistant,
     customerAssistant: CustomerAssistant,
+    gentlemanAssistant: GentlemanAssistant,
+    outdatedAssistant: OutdatedAssistant,
     unregisteredActorAssistant: UnregisteredActorAssistant
   ) {
     this.actorResolver = actorResolver
     this.salonAssistant = salonAssistant
     this.customerAssistant = customerAssistant
+    this.gentlemanAssistant = gentlemanAssistant
+    this.outdatedAssistant = outdatedAssistant
     this.unregisteredActorAssistant = unregisteredActorAssistant
   }
 
@@ -43,6 +55,12 @@ class BusinessAssistant implements ActorAssistant<ActorId> {
         }
         if (actor instanceof CustomerActor) {
           return this.customerAssistant.handle(actor, inquiry)
+        }
+        if (actor instanceof GentlemanActor) {
+          return this.gentlemanAssistant.handle(actor, inquiry)
+        }
+        if (actor instanceof OutdatedActor) {
+          return this.outdatedAssistant.handle(actor, inquiry)
         }
         throw new Error(`unknown actor type (${actor}) of ${actorId}`)
       }

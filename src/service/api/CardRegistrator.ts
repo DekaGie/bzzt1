@@ -60,6 +60,18 @@ class CardRegistrator {
 
   private static congratulate (actorId: ActorId, card: CheckedCard): Promise<Array<Reaction>> {
     CardRegistrator.LOG.warn(`card ${card.cardNumber()} just registered to ${actorId}`)
+    if (card.isGentleman()) {
+      Reactions.choice(
+        {
+          topImage: StaticImageUrls.GENTLEMAN,
+          title: UnregisteredTexts.activationSuccess(card.employerName()),
+          subtitle: UnregisteredTexts.gentlemanKnowledge(),
+          choices: [
+            Choices.link(CustomerTexts.showBarberList(), 'https://beautyzazero.pl/gentleman#barbershopy'),
+          ]
+        }
+      )
+    }
     return Results.many(
       Reactions.choice(
         {

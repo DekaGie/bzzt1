@@ -2,11 +2,11 @@ import CardNumber from '../domain/CardNumber'
 
 class UnregisteredTexts {
   static welcome (): string {
-    return 'Hej, nieznajoma!'
+    return 'Hej!'
   }
 
   static intentPrompt (): string {
-    return 'Czym jesteś zainteresowana?'
+    return 'Czym mogę służyć?'
   }
 
   static activateCard (): string {
@@ -15,11 +15,11 @@ class UnregisteredTexts {
 
   static inputCardNumberPrompt (): string {
     return `Dobrze :)
-W takim razie zrób zdjęcie swojej karty Beauty Zazero lub podaj mi jej numer.`
+W takim razie zrób zdjęcie swojej karty Zazero lub podaj mi jej numer.`
   }
 
   static invalidCardNumber (cardNumber: number): string {
-    return `Hmmm, ${cardNumber}?\nTo nie wygląda jak prawidłowy numer karty Beauty Zazero :(`
+    return `Hmmm, ${cardNumber}?\nTo nie wygląda jak prawidłowy numer karty Zazero :(`
   }
 
   static cardActivatedByAnother (cardNumber: CardNumber): string {
@@ -31,7 +31,7 @@ W takim razie zrób zdjęcie swojej karty Beauty Zazero lub podaj mi jej numer.`
   }
 
   static ensureActivationPrompt (): string {
-    return 'Ooo, to karta Beauty Zazero!'
+    return 'Ooo, to karta Zazero!'
   }
 
   static ensureActivationQuestion (): string {
@@ -44,6 +44,10 @@ W takim razie zrób zdjęcie swojej karty Beauty Zazero lub podaj mi jej numer.`
 
   static whatNext (): string {
     return 'Pewnie chcesz wiedzieć co dalej?'
+  }
+
+  static gentlemanKnowledge (): string {
+    return 'Po prostu idź z nią do barbera.'
   }
 
   static invalidSalonSecret (): string {

@@ -13,6 +13,10 @@ class StaticImageUrls {
     // eslint-disable-next-line max-len
     'https://www.napisyweselne.pl/wp-content/uploads/2018/05/napis-na-wesele-WITAMY-witamy-witamy-gosci-weselnych-witacz-na-wesele-dekoracje-na-wesele-udekorowac-sale-weselna-napisy-na-wesele-napisy-slubne-1.jpg'
   )
+
+  static readonly GENTLEMAN: ImageUrl = new ImageUrl(
+    'https://katalogmarzen.pl/img/products/2/2019_12/brodaty-mezczyzna-na-fotelu-u-barbera-jpg.jpg'
+  )
 }
 
 export default StaticImageUrls

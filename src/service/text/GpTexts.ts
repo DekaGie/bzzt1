@@ -11,8 +11,8 @@ class GpTexts {
     return 'Nie :('
   }
 
-  static customerService (): string {
-    return 'Obsługa klienta'
+  static faq (): string {
+    return 'FAQ'
   }
 
   static unexpectedError (): string {

@@ -21,6 +21,11 @@ class Instant {
     return new Date(this.asEms()).toISOString()
   }
 
+  toDateString (): string {
+    const date: Date = new Date(this.asEms())
+    return `${date.getDate()}.${date.getMonth() + 1}.${date.getFullYear()}`
+  }
+
   static now (): Instant {
     return new Instant(new Date().getTime() / 1000)
   }

@@ -41,7 +41,7 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
       case 'IMAGE': {
         return Results.many(
           Reactions.plainText(
-            CustomerTexts.alreadyActivated(actor.cardNumber().asNumber(), actor.employerName())
+            CustomerTexts.alreadyActivated(actor.info())
           )
         )
       }
@@ -64,12 +64,12 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
     return Results.many(
       Reactions.choice(
         {
-          title: CustomerTexts.welcome(actor.calloutName()),
+          title: CustomerTexts.welcome(actor.info().calloutName()),
           subtitle: CustomerTexts.intentPrompt(),
           choices: [
             Choices.inquiry(CustomerTexts.showPartners(), { type: 'SHOW_PARTNERS' }),
             Choices.inquiry(CustomerTexts.showSubscriptions(), { type: 'SHOW_SUBSCRIPTIONS' }),
-            Choices.phone(GpTexts.customerService(), '+48662097978')
+            Choices.link(GpTexts.faq(), 'https://beautyzazero.pl/faq')
           ]
         }
       )
@@ -85,14 +85,14 @@ class CustomerAssistant implements ActorAssistant<CustomerActor> {
         )
       }
       case CustomerIntent.SHOW_PARTNERS: {
-        return this.salonResolver.findAvailable(actor.cardNumber()).then(
+        return this.salonResolver.findAvailable(actor.info().cardNumber()).then(
           (salons) => Results.many(
             ...salons.map((salon) => CustomerAssistant.toSalonReaction(salon))
           )
         )
       }
       case CustomerIntent.SHOW_SUBSCRIPTIONS: {
-        return this.packetResolver.findAvailable(actor.cardNumber()).then(
+        return this.packetResolver.findAvailable(actor.info().cardNumber()).then(
           (packets) => Results.many(
             ...packets.map((packet) => CustomerAssistant.toPacketReaction(packet))
           )

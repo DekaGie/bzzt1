@@ -15,6 +15,10 @@ class CheckedCard {
     return new CardNumber(this.dbo.cardNumber)
   }
 
+  isGentleman (): boolean {
+    return this.dbo.agreement.gentleman
+  }
+
   validUntil (): Instant {
     return new Instant(this.dbo.agreement.validUntilEs)
   }

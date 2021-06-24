@@ -13,6 +13,16 @@ class PacketRepository extends Repository<PacketDbo> {
       .setParameters({ cardNumber })
       .getMany()
   }
+
+  countAvailable (cardNumber: number): Promise<number> {
+    return this.createQueryBuilder('packet')
+      .leftJoin('packet.agreementPackets', 'agreementPacket')
+      .leftJoin('agreementPacket.agreement', 'agreement')
+      .leftJoin('agreement.cards', 'card')
+      .where('card.cardNumber = :cardNumber')
+      .setParameters({ cardNumber })
+      .getCount()
+  }
 }
 
 export default PacketRepository
