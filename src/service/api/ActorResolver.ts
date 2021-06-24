@@ -62,7 +62,7 @@ class ActorResolver {
       return Promise.resolve(new OutdatedActor(id, info, until))
     }
     if (dbo.card.agreement.gentleman) {
-      this.packetRepository.countAvailable(dbo.card.cardNumber).then(
+      return this.packetRepository.countAvailable(dbo.card.cardNumber).then(
         (count) => new GentlemanActor(id, info, count > 1)
       )
     }
