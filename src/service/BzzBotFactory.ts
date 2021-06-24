@@ -58,7 +58,7 @@ class BzzBotFactory {
       locator.db.refer().getCustomRepository(TreatmentExecutionRepository)
     )
     const businessAssistant: ActorAssistant<ActorId> = new BusinessAssistant(
-      new ActorResolver(salonRegistrationRepository, cardRegistrationRepository),
+      new ActorResolver(salonRegistrationRepository, cardRegistrationRepository, packetRepository),
       new SalonAssistant(
         barcodeParser, cardChecker, cardUpdater, stateStore, treatmentResolver, visitRegistrator
       ),
