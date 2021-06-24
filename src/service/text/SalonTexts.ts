@@ -1,9 +1,9 @@
 import CardNumber from '../domain/CardNumber'
 
 class SalonTexts {
-  static onlyCardChecking (): string {
-    return `Twoje konto jest powiązane z salonem.
-Zrób zdjęcie karty Beauty Zazero lub podaj mi jej numer.`
+  static onlyCardChecking (salonName: string): string {
+    return `Twoje konto jest powiązane z salonem ${salonName}.
+Zrób zdjęcie karty Zazero lub podaj mi jej numer.`
   }
 
   static invalidCardNumber (cardNumber: number): string {
@@ -19,7 +19,7 @@ Nie akceptuj jej!`
 
   static notYetActivatedCard (cardNumber: CardNumber): string {
     return `Karta ${cardNumber.asNumber()} nie została jeszcze aktywowana.
-Zanim ją zaakceptujesz, poproś by klientka zagadała do bota i aktywowała kartę.`
+Zanim ją zaakceptujesz, poproś posiadacza karty o aktywację karty u bota FB.`
   }
 
   static missingPictureQuestion (): string {
@@ -27,16 +27,16 @@ Zanim ją zaakceptujesz, poproś by klientka zagadała do bota i aktywowała kar
   }
 
   static takePicturePrompt (): string {
-    return 'Zrób zdjęcie, pionowo lub poziomo, ale tak by twarz klientki znajdowała się dokładnie na środku kadru.'
+    return 'Zrób zdjęcie, pionowo lub poziomo, ale tak by twarz znajdowała się dokładnie na środku kadru.'
   }
 
   static pictureConsented (yes: boolean): string {
-    return yes ? 'Klientka pozwala :)' : 'Nie teraz...'
+    return yes ? 'Tak :)' : 'Nie teraz...'
   }
 
   static thanksForCustomerPicture (): string {
     return `Dzięki :)
-Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
+Wkrótce zaktualizujemy zdjęcie w systemie.`
   }
 
   static idVerificationPrompt (): string {
@@ -48,29 +48,29 @@ Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
   }
 
   static pictureVerificationQuestion (): string {
-    return 'Czy to ta klientka?'
+    return 'Czy tożsamość się zgadza?'
   }
 
   static customerPictureUpdateAborted (): string {
     // eslint-disable-next-line max-len
-    return 'Oczekiwałem zdjęcia klientki. Przerywam proces weryfikacji, w razie potrzeby zacznij go od początku, skanując kartę klientki.'
+    return 'Oczekiwałem zdjęcia. Przerywam proces weryfikacji, w razie potrzeby zacznij go od początku, skanując kartę Zazero.'
   }
 
   static rejectCard (): string {
-    return 'Nie akceptuj karty! Operator został powiadomiony o próbie nadużycia ze strony klientki.'
+    return 'Nie akceptuj karty! Operator został powiadomiony o próbie nadużycia karty przez posiadacza.'
   }
 
   static pickTreatmentPrompt (adding: boolean): string {
-    return adding ? 'Jaka jeszcze usługa?' : 'Na jaką przyszła usługę?'
+    return adding ? 'Jaka jeszcze usługa?' : 'Jaka usługa?'
   }
 
   static pickTreatmentHint (moreRight: number): string {
-    return moreRight === 0 ? 'To wszystkie w jej pakiecie:' : `Jeszcze ${moreRight} w prawo ->`
+    return moreRight === 0 ? 'To wszystkie na tej karcie:' : `Jeszcze ${moreRight} w prawo ->`
   }
 
   static treatmentPickingContinuation (count: number): string {
-    return count === 1 ? 'Ok, była na tej jednej usłudze?'
-      : `Ok, była na tych ${count} usługach?`
+    return count === 1 ? 'Ok, tylko ta jedna usługa?'
+      : `Ok, ${count} usług, to wszystko?`
   }
 
   static treatmentPickingContinuationChoice (): string {
@@ -79,8 +79,8 @@ Wkrótce zaktualizujemy zdjęcie klientki w systemie.`
 
   static noTreatmentAvailable (): string {
     return `Ojej :(
-Nie oferujecie w swoim salonie żadnych usług dostępnych w pakiecie tej klientki...
-Nie możesz zaakceptować tej karty.`
+Nie oferujecie w swoim salonie żadnych usług dostępnych dla tej karty...
+Nie możesz zaakceptować wizyty.`
   }
 
   static treatmentPickingConfirm (): string {
@@ -93,18 +93,18 @@ Nie możesz zaakceptować tej karty.`
 
   static flowCancelled (): string {
     return `Rozumiem.
-Przerywam proces rozliczania usług, w razie potrzeby zacznij go od początku, skanując kartę klientki.`
+Przerywam proces rozliczania usług, w razie potrzeby zacznij go od początku, skanując kartę Zazero.`
   }
 
   static flowSuccessful (customerName: string, treatmentNames: Array<string>): string {
     const listing: string = treatmentNames.map((name) => `\n- ${name}`).join('')
     return `Świetnie!
-Zanotowałem, że ${customerName} przyszła do Was na usługi: ${listing}
-Jeśli coś się nie zgadza, wyjaśniaj błąd kontaktując się z operatorem Beauty Zazero.`
+Zanotowałem: ${customerName}, usługi: ${listing}
+Jeśli coś się nie zgadza, wyjaśniaj błąd kontaktując się z operatorem kart Zazero.`
   }
 
   static unknownCustomer (cardNumber: number): string {
-    return `świeża posiadaczka karty ${cardNumber}`
+    return `świeża karta ${cardNumber}`
   }
 }
 

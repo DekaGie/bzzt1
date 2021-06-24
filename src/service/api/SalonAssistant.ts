@@ -76,7 +76,7 @@ class SalonAssistant implements ActorAssistant<SalonActor> {
         const freeTextInquiry: FreeTextInquiry = inquiry as FreeTextInquiry
         const cardNumber: Optional<number> = TextExtractions.cardNumber(freeTextInquiry.freeText)
         if (!cardNumber.isPresent()) {
-          return Results.many(Reactions.plainText(SalonTexts.onlyCardChecking()))
+          return Results.many(Reactions.plainText(SalonTexts.onlyCardChecking(actor.displayName())))
         }
         return this.handleCardNumber(actor, cardNumber.get())
       }

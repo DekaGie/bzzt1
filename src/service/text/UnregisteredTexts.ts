@@ -55,7 +55,7 @@ W takim razie zrób zdjęcie swojej karty Zazero lub podaj mi jej numer.`
   }
 
   static salonRegistrationSuccess (): string {
-    return 'Twoje konto od teraz powiązane jest z salonem i służy do skanowania kart klientek.'
+    return 'Twoje konto od teraz powiązane jest z salonem i służy do skanowania kart Zazero.'
   }
 }
 
