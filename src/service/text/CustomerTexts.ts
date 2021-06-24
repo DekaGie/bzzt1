@@ -60,7 +60,7 @@ Ja nie będę Ci już do niczego potrzebny.`
 
   static outdatedCard (info: CardActorInfo, until: Instant): string {
     return `${info.calloutName().orElse('Hej')},
-Twoja karta ${info.cardNumber().asNumber()} (od ${info.employerName()}) jest nieaktywna od ${until.toDateString()}'}.
+Twoja karta ${info.cardNumber().asNumber()} (od ${info.employerName()}) jest nieaktywna od ${until.toDateString()}.
 Jeśli chcesz ją ponownie aktywować, skontaktuj się ze swoim pracodawcą :)`
   }
 }

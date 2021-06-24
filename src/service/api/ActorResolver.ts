@@ -56,7 +56,7 @@ class ActorResolver {
     const id: ActorId = new ActorId(dbo.actorId)
     const info: CardActorInfo = new CardActorInfo(dbo)
     const until: Instant = new Instant(dbo.card.agreement.validUntilEs)
-    if (until.isAtOrAfter(Instant.now())) {
+    if (Instant.now().isAtOrAfter(until)) {
       return Promise.resolve(new OutdatedActor(id, info, until))
     }
     if (dbo.card.agreement.gentleman) {
