@@ -23,9 +23,11 @@ class ActorResolver {
   constructor (
     salonRegistrationRepository: SalonRegistrationRepository,
     cardRegistrationRepository: CardRegistrationRepository,
+    packetRepository: PacketRepository
   ) {
     this.salonRegistrationRepository = salonRegistrationRepository
     this.cardRegistrationRepository = cardRegistrationRepository
+    this.packetRepository = packetRepository
   }
 
   resolve (actorId: ActorId): Promise<Optional<Actor>> {
