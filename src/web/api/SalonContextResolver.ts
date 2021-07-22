@@ -6,6 +6,7 @@ import HttpRequest from '../../http/HttpRequest'
 import SalonName from '../../service/domain/SalonName'
 import SalonSessionTokenManager from './SalonSessionTokenManager'
 import HttpError from '../../http/HttpError'
+import SalonWorkerRepository from '../../db/repo/SalonWorkerRepository'
 
 class SalonContextResolver {
   private readonly salons: SalonResolver;
@@ -14,7 +15,8 @@ class SalonContextResolver {
 
   constructor (db: Connection) {
     this.salons = new SalonResolver(
-      db.getCustomRepository(SalonRepository)
+      db.getCustomRepository(SalonRepository),
+      db.getCustomRepository(SalonWorkerRepository)
     )
     this.manager = new SalonSessionTokenManager()
   }

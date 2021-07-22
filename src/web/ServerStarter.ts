@@ -47,7 +47,7 @@ class ServerStarter {
     const api: ExpressEndpointFactory = endpoints.filter(new ApiSafeErrorFilter())
     application.post(
       '/salons/authenticate',
-      api.servlet(new SalonAuthenticationServlet(locator.fbClient.refer()))
+      api.servlet(new SalonAuthenticationServlet(locator.fbClient.refer(), locator.db.refer()))
     )
     application.get(
       '/salons/me/treatments',

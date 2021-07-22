@@ -29,6 +29,7 @@ import VisitRegistrator from './api/VisitRegistrator'
 import TreatmentExecutionRepository from '../db/repo/TreatmentExecutionRepository'
 import GenlemanAssistant from './api/GentlemanAssistant'
 import OutdatedAssistant from './api/OutdatedAssistant'
+import SalonWorkerRepository from '../db/repo/SalonWorkerRepository'
 
 class BzzBotFactory {
   static create (config: Config, locator: ServiceLocator) {
@@ -52,7 +53,9 @@ class BzzBotFactory {
     const treatmentResolver: TreatmentResolver = new TreatmentResolver(
       locator.db.refer().getCustomRepository(TreatmentRepository)
     )
-    const salonResolver: SalonResolver = new SalonResolver(salonRepository)
+    const salonResolver: SalonResolver = new SalonResolver(
+      salonRepository, locator.db.refer().getCustomRepository(SalonWorkerRepository)
+    )
     const packetResolver: PacketResolver = new PacketResolver(packetRepository)
     const visitRegistrator: VisitRegistrator = new VisitRegistrator(
       locator.db.refer().getCustomRepository(TreatmentExecutionRepository)

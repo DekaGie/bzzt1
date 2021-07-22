@@ -1,3 +1,4 @@
+import { Connection } from 'typeorm'
 import HttpServlet from '../../http/HttpServlet'
 import HttpRequest from '../../http/HttpRequest'
 import HttpResponse from '../../http/HttpResponse'
@@ -8,17 +9,25 @@ import SalonSessionTokenManager from './SalonSessionTokenManager'
 import SalonSessionToken from './SalonSessionToken'
 import Logger from '../../log/Logger'
 import Loggers from '../../log/Loggers'
-import SalonName from '../../service/domain/SalonName'
+import SalonResolver from '../../service/api/SalonResolver'
+import SalonRepository from '../../db/repo/SalonRepository'
+import SalonWorkerRepository from '../../db/repo/SalonWorkerRepository'
 
 class SalonAuthenticationServlet implements HttpServlet {
   private static readonly LOG: Logger = Loggers.get(SalonAuthenticationServlet.name)
 
   private readonly fbClient: FbClient;
 
+  private readonly salonResolver: SalonResolver;
+
   private readonly manager: SalonSessionTokenManager;
 
-  constructor (fbClient: FbClient) {
+  constructor (fbClient: FbClient, db: Connection) {
     this.fbClient = fbClient
+    this.salonResolver = new SalonResolver(
+      db.getCustomRepository(SalonRepository),
+      db.getCustomRepository(SalonWorkerRepository)
+    )
     this.manager = new SalonSessionTokenManager()
   }
 
@@ -48,24 +57,29 @@ class SalonAuthenticationServlet implements HttpServlet {
         }
       )
       .then(
-        (email) => this.renderTokenResponseFor(email)
+        (email) => this.sessionTokenFor(email)
+      )
+      .then(
+        (token) => ({
+          code: 200,
+          body: {
+            sessionToken: token.token,
+            validUntilEs: token.validUntil.asEs()
+          }
+        })
       )
   }
 
-  private renderTokenResponseFor (email: string): HttpResponse {
-    SalonAuthenticationServlet.LOG.info(`uznajemy że ${email} to powerbrows`)
-    const token: SalonSessionToken = this.manager.issueFor(new SalonName('powerbrows')).orElseThrow(
-      () => new ApiSafeError(
-        'not_salon', 'To konto FB nie jest powiązane z salonem.'
+  private sessionTokenFor (email: string): Promise<SalonSessionToken> {
+    return this.salonResolver.findNameByEmail(email)
+      .then(
+        (salonName) => salonName.orElseThrow(
+          () => new ApiSafeError(
+            'not_salon', 'To konto FB nie jest powiązane z salonem.'
+          )
+        )
       )
-    )
-    return {
-      code: 200,
-      body: {
-        sessionToken: token.token,
-        validUntilEs: token.validUntil.asEs()
-      }
-    }
+      .then((salonName) => this.manager.issueFor(salonName))
   }
 }
 

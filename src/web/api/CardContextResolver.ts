@@ -30,7 +30,7 @@ class CardContextResolver {
       .then(
         (checkedCard) => {
           if (Instant.now().isAtOrAfter(checkedCard.validUntil())) {
-            throw new ApiSafeError('outdated_card', `Karta utraciła ważność ${checkedCard.validUntil()}`)
+            throw new ApiSafeError('outdated_card', 'Karta utraciła ważność.')
           }
           return new ResolvedCard(
             checkedCard.cardNumber(),

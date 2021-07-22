@@ -1,19 +1,16 @@
-import { Optional } from 'typescript-optional'
 import ApiSafeError from './ApiSafeError'
 import Instant from '../../service/domain/Instant'
 import SalonSessionToken from './SalonSessionToken'
 import SalonName from '../../service/domain/SalonName'
 
 class SalonSessionTokenManager {
-  issueFor (salon: SalonName): Optional<SalonSessionToken> {
+  issueFor (salon: SalonName): SalonSessionToken {
     const validUntil: Instant = new Instant(Instant.now().asEs() + 3600)
     const payload: string = `${salon.toRepresentation()}:${validUntil.asEs()}`
-    return Optional.of(
-      {
-        token: `${payload}|${SalonSessionTokenManager.hash(payload)}`,
-        validUntil
-      }
-    )
+    return {
+      token: `${payload}|${SalonSessionTokenManager.hash(payload)}`,
+      validUntil
+    }
   }
 
   validate (token: string): SalonName {
