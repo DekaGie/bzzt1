@@ -36,7 +36,15 @@ class SalonAuthenticationServlet implements HttpServlet {
       .asObject()
       .mandatory('facebookAccessToken')
       .asString()
+    SalonAuthenticationServlet.LOG.info(`attempting authentication with ${fbAccessToken}`)
     return this.fbClient.identify(fbAccessToken)
+      .catch(
+        (error) => {
+          throw new ApiSafeError(
+            'fb_error', 'Nie udało się zalogować przez FB, spróbuj później.', error
+          )
+        }
+      )
       .then(
         (response) => new JsonElement('$', response).asObject()
           .optional('email')
@@ -48,13 +56,6 @@ class SalonAuthenticationServlet implements HttpServlet {
             )
           )
           .asString()
-      )
-      .catch(
-        (error) => {
-          throw new ApiSafeError(
-            'fb_error', 'Nie udało się zalogować przez FB, spróbuj później.', error
-          )
-        }
       )
       .then(
         (email) => this.sessionTokenFor(email)
@@ -71,11 +72,12 @@ class SalonAuthenticationServlet implements HttpServlet {
   }
 
   private sessionTokenFor (email: string): Promise<SalonSessionToken> {
+    SalonAuthenticationServlet.LOG.info(`FB token validated as ${email}`)
     return this.salonResolver.findNameByEmail(email)
       .then(
         (salonName) => salonName.orElseThrow(
           () => new ApiSafeError(
-            'not_salon', 'To konto FB nie jest powiązane z salonem.'
+            'not_salon', 'Twoje konto FB nie jest powiązane z salonem.'
           )
         )
       )

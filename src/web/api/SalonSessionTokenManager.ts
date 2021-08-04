@@ -2,9 +2,14 @@ import ApiSafeError from './ApiSafeError'
 import Instant from '../../service/domain/Instant'
 import SalonSessionToken from './SalonSessionToken'
 import SalonName from '../../service/domain/SalonName'
+import Logger from '../../log/Logger'
+import Loggers from '../../log/Loggers'
 
 class SalonSessionTokenManager {
+  private static readonly LOG: Logger = Loggers.get(SalonSessionTokenManager.name)
+
   issueFor (salon: SalonName): SalonSessionToken {
+    SalonSessionTokenManager.LOG.info(`issuing token for ${salon}`)
     const validUntil: Instant = new Instant(Instant.now().asEs() + 3600)
     const payload: string = `${salon.toRepresentation()}:${validUntil.asEs()}`
     return {
@@ -14,6 +19,7 @@ class SalonSessionTokenManager {
   }
 
   validate (token: string): SalonName {
+    SalonSessionTokenManager.LOG.info(`validating token ${token}`)
     const ioSignature: number = token.indexOf('|')
     if (ioSignature === -1) {
       throw new ApiSafeError('invalid_token', 'Brak sygnatury tokenu.')

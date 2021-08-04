@@ -5,8 +5,12 @@ import HttpServlet from '../../http/HttpServlet'
 import HttpRequest from '../../http/HttpRequest'
 import HttpResponse from '../../http/HttpResponse'
 import SalonContextResolver from './SalonContextResolver'
+import Loggers from '../../log/Loggers'
+import Logger from '../../log/Logger'
 
 class SalonTreatmentsServlet implements HttpServlet {
+  private static readonly LOG: Logger = Loggers.get(SalonTreatmentsServlet.name)
+
   private readonly salons: SalonContextResolver;
 
   private readonly treatments: TreatmentResolver;
@@ -20,6 +24,12 @@ class SalonTreatmentsServlet implements HttpServlet {
 
   handle (request: HttpRequest): Promise<HttpResponse> {
     return this.salons.resolve(request)
+      .then(
+        (salonName) => {
+          SalonTreatmentsServlet.LOG.info(`finding all treatments offered by ${salonName}`)
+          return salonName
+        }
+      )
       .then((salonName) => this.treatments.findAllOffered(salonName))
       .then(
         (treatments) => ({
